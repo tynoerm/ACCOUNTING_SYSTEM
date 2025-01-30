@@ -12,7 +12,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 // Connecting mongoDB Database
-mongoose.connect("mongodb://127.0.0.1:27017/ACCOUNTING_SYSTEM")
+mongoose.connect("mongodb+srv://tinomutendaishemutemaringa:Z6UyvsaAHRwMTpR9@nexus.h6auc.mongodb.net/?retryWrites=true&w=majority&appName=nexus")
   .then((x) => {
     console.log(`Connected to Mongo! Database name: "${x.connections[0].name}"`);
   })
