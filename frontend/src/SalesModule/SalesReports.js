@@ -23,7 +23,7 @@ const SalesReports = () => {
 
         useEffect(() => {
             axios
-               .get("https://accounting-system-f2il.onrender.com/salesmodel")
+               .get("https://accounting-system-1.onrender.com/salesmodel")
                .then((res) => {
                 setSalesReportsForm(res.data.data);
                })
@@ -41,7 +41,7 @@ const SalesReports = () => {
   }
   const handleDownload = async (type) => {
     try {
-      const response = await axios.get(`https://accounting-system-f2il.onrender.com/salesmodel/download/${type}`, {
+      const response = await axios.get(`https://accounting-system-1.onrender.com/salesmodel/download/${type}`, {
         responseType: "blob", // Important for file download
       });
 

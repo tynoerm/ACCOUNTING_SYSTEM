@@ -33,7 +33,7 @@ const Quotation = () => {
     //fetch all items from the database source
     useEffect(() => {
         axios
-            .get("https://accounting-system-f2il.onrender.com/quotation")
+            .get("https://accounting-system-1.onrender.com/quotation")
             .then((res) => {
                 setQuotationForm(res.data.data);
             })
@@ -91,7 +91,7 @@ const Quotation = () => {
 
         };
         axios
-            .post("https://accounting-system-f2il.onrender.com/quotation/create-quote", quotationInsert)
+            .post("https://accounting-system-1.onrender.com/quotation/create-quote", quotationInsert)
             .then((res) => {
                 setQuotationForm((prev) => [...prev, quotationInsert]);
                 setFilteredQuotation((prev) => [...prev, quotationInsert]);
@@ -112,7 +112,7 @@ const Quotation = () => {
             const newStatus = updatedQuote.quoteStatus === "Unpaid" ? "Paid" : "Unpaid"; // Toggle status
     
             // Update the status in the backend
-            await axios.put(`https://accounting-system-f2il.onrender.com/quotation/update-status/${quoteId}`, { quoteStatus: newStatus });
+            await axios.put(`https://accounting-system-1.onrender.com/quotation/update-status/${quoteId}`, { quoteStatus: newStatus });
     
             // Update the state to reflect the new status
             setQuotationForm(prev =>
@@ -127,7 +127,7 @@ const Quotation = () => {
     
     const handleDownload = async (type) => {
         try {
-          const response = await axios.get(`https://accounting-system-f2il.onrender.com/quotation/download/${type}`, {
+          const response = await axios.get(`https://accounting-system-1.onrender.com/quotation/download/${type}`, {
             responseType: "blob", // Important for file download
           });
     
@@ -152,7 +152,7 @@ const Quotation = () => {
     const handleClose1 = () => setShow1(false);
 
     useEffect(() => {
-        axios.get('https://accounting-system-f2il.onrender.com/quotation/get-quotes')
+        axios.get('https://accounting-system-1.onrender.com/quotation/get-quotes')
             .then(response => {
                 setQuotationForm(response.data);
                 setFilteredQuotation(response.data);

@@ -39,7 +39,7 @@ const [error , setError] = useState("");
 
   useEffect(() => {
     axios
-      .get("https://accounting-system-f2il.onrender.com/expense/")
+      .get("https://accounting-system-1.onrender.com/expense/")
       .then((res) => {
         setExpensesForm(res.data.data);
       })
@@ -91,7 +91,7 @@ const [error , setError] = useState("");
   
     // Send data to the backend
     axios
-      .post("https://accounting-system-f2il.onrender.com/expense/create-expense", expensesInsert)
+      .post("https://accounting-system-1.onrender.com/expense/create-expense", expensesInsert)
       .then((res) => {
         console.log({ status: res.status });
         setExpensesForm((prev) => [...prev, expensesInsert]);
@@ -106,7 +106,7 @@ const [error , setError] = useState("");
 
   const handleDownload = async (type) => {
     try {
-      const response = await axios.get(`https://accounting-system-f2il.onrender.com/expense/download/${type}`, {
+      const response = await axios.get(`https://accounting-system-1.onrender.com/expense/download/${type}`, {
         responseType: "blob", // Important for file download
       });
 
