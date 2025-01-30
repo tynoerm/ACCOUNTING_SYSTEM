@@ -27,7 +27,7 @@ import { quotationRoutes } from './routes/SalesModule/quotation.js';
 import { expensesRoutes } from './routes/ExpensesModule/expenses.js';
 import { stocksRoutes } from './routes/StockModule/stocks.js';
 import { salesRoutes } from './routes/SalesModule/sales.js';
-import { invoiceRoutes } from './routes/SalesModule/invoice.js';
+
 
 
 //Route Use
@@ -37,7 +37,7 @@ app.use("/expense", expensesRoutes);
 app.use("/stock", stocksRoutes);
 app.use("/salesmodel", salesRoutes)
 
-app.use('/invoice', invoiceRoutes);
+
 
 
 
