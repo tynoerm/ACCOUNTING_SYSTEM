@@ -33,7 +33,7 @@ const Stock = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:3001/stock/")
+      .get("https://accounting-system-1.onrender.com/stock/")
       .then((res) => {
         setStockForm(res.data.data);
       })
