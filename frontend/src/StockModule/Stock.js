@@ -65,7 +65,7 @@ const Stock = () => {
       receivedBy,
     };
     axios
-      .post("http://localhost:3001/stock/create-stock", stockInsert)
+      .post("https://accounting-system-1.onrender.com/stock/create-stock", stockInsert)
       .then((res) => {
         console.log({ status: res.status });
         setStockForm(prev => [...prev, stockInsert])
@@ -74,7 +74,7 @@ const Stock = () => {
   }
   const handleDownload = async (type) => {
     try {
-      const response = await axios.get(`http://localhost:3001/stock/download/${type}`, {
+      const response = await axios.get(`https://accounting-system-1.onrender.com/stock/download/${type}`, {
         responseType: "blob", // Important for file download
       });
 
