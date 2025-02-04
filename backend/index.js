@@ -5,7 +5,7 @@ import cors from "cors";
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: 'https://accounting-system-qlz4.vercel.app/' }));
 app.use(express.urlencoded({ extended: true })); 
 
 
@@ -17,7 +17,7 @@ mongoose.connect("mongodb+srv://tinomutendaishemutemaringa:Z6UyvsaAHRwMTpR9@nexu
     console.log(`Connected to Mongo! Database name: "${x.connections[0].name}"`);
   })
   .catch((err) => {
-    console.error("mongodb://localhost:27017/", err.reason);
+    console.error("mongodb+srv://tinomutendaishemutemaringa:Z6UyvsaAHRwMTpR9@nexus.h6auc.mongodb.net/?retryWrites=true&w=majority&appName=nexus", err.reason);
   });
 
 
