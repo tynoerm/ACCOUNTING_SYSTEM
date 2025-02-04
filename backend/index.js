@@ -6,8 +6,8 @@ import cors from "cors";
 const app = express();
 app.use(express.json());
 const corsOptions = {
-  origin: 'https://accounting-system-qlz4-r2kgt3p3t-tynoerms-projects.vercel.app',
-  methods: ['GET', 'POST'],
+  origin: 'https://accounting-system-qlz4.vercel.app', // Your actual frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
