@@ -17,12 +17,12 @@ app.use(cors(corsOptions));
 
 
 // Connecting mongoDB Database
-mongoose.connect("mongodb+srv://tinomutendaishemutemaringa:Z6UyvsaAHRwMTpR9@nexus.h6auc.mongodb.net/?retryWrites=true&w=majority&appName=nexus")
+mongoose.connect("mongodb+srv://accountingsystem:Tinomutenda123#@cluster0.tkqyx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
   .then((x) => {
     console.log(`Connected to Mongo! Database name: "${x.connections[0].name}"`);
   })
   .catch((err) => {
-    console.error("mongodb+srv://tinomutendaishemutemaringa:Z6UyvsaAHRwMTpR9@nexus.h6auc.mongodb.net/?retryWrites=true&w=majority&appName=nexus", err.reason);
+    console.error("mongodb+srv://accountingsystem:Tinomutenda123#@cluster0.tkqyx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", err.reason);
   });
 
 
