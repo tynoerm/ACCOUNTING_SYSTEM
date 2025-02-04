@@ -5,9 +5,14 @@ import cors from "cors";
 
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: 'https://accounting-system-qlz4.vercel.app/' }));
-app.use(express.urlencoded({ extended: true })); 
+const corsOptions = {
+  origin: 'https://accounting-system-qlz4-r2kgt3p3t-tynoerms-projects.vercel.app',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
 
+app.use(express.urlencoded({ extended: true })); 
+app.use(cors(corsOptions));
 
 
 
