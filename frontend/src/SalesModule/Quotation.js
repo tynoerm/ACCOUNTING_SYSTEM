@@ -96,6 +96,7 @@ const Quotation = () => {
                 setQuotationForm((prev) => [...prev, quotationInsert]);
                 setFilteredQuotation((prev) => [...prev, quotationInsert]);
             });
+            setClose(true)
     };
 
     const handleDateChange = (e) => {
