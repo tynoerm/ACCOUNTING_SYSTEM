@@ -101,7 +101,7 @@ const [error , setError] = useState("");
         console.error(error);
         setError("An error occurred while submitting the expense.");
       });
-      setClose(true)
+      setShow(false)
   };
 
 
