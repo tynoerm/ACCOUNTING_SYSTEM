@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
 
 // Connecting to MongoDB Database with options
-mongoose.connect("mongodb+srv://accountingsystem:Tinomutenda123#@cluster0.tkqyx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
+mongoose.connect("mongodb+srv://accountingsystem:EwLtxAVHQeYbn5bQ@cluster0.tkqyx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   connectTimeoutMS: 30000,  // 30 seconds for connection timeout
