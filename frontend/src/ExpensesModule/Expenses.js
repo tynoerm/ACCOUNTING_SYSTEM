@@ -39,7 +39,7 @@ const [error , setError] = useState("");
 
   useEffect(() => {
     axios
-      .get("https://accounting-system-1.onrender.com/expense/")
+      .get("http://localhost:3001/expense/")
       .then((res) => {
         setExpensesForm(res.data.data);
       })
@@ -91,7 +91,7 @@ const [error , setError] = useState("");
   
     // Send data to the backend
     axios
-      .post("https://accounting-system-1.onrender.com/expense/create-expense", expensesInsert)
+      .post("http://localhost:3001/expense/create-expense", expensesInsert)
       .then((res) => {
         console.log({ status: res.status });
         setExpensesForm((prev) => [...prev, expensesInsert]);
@@ -107,7 +107,7 @@ const [error , setError] = useState("");
 
   const handleDownload = async (type) => {
     try {
-      const response = await axios.get(`https://accounting-system-1.onrender.com/expense/download/${type}`, {
+      const response = await axios.get(`http://localhost:3001/expense/download/${type}`, {
         responseType: "blob", // Important for file download
       });
 
@@ -242,7 +242,13 @@ const [error , setError] = useState("");
                   <option>food</option>
                   <option>transport fee</option>
                   <option>fuel</option>
-                  <option>accommodation</option>
+                  <option>rent</option>
+                  <option>liscence</option>
+                  <option>salary and wages</option>
+                  <option>collection</option>
+                  <option>personal expenses</option>
+                  <option>electricity</option>
+                  <option>water</option>
                 </select>
               </div>
             </div>
@@ -273,7 +279,7 @@ const [error , setError] = useState("");
             </div>
 
             {/* Submit Button */}
-            <Button variant="primary" type="submit" className="w-100 mt-4">FiNALIZE EXPENSE</Button>
+            <Button variant="primary" type="submit" className="w-100 mt-4">FINALIZE EXPENSE</Button>
           </form>
         </Modal.Body>
       </Modal>
