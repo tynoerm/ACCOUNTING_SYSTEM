@@ -51,7 +51,7 @@ const Sales = () => {
         };
     
         axios
-            .post("http://localhost:3001/salesmodel/create-sale", salesInsert)
+            .post("https://accounting-system-1.onrender.com/salesmodel/create-sale", salesInsert)
             .then((res) => {
                 console.log({ status: res.status });
                 setSalesForm((prev) => [...prev, salesInsert]);
