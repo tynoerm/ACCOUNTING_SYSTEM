@@ -249,6 +249,7 @@ const [error , setError] = useState("");
                   <option>personal expenses</option>
                   <option>electricity</option>
                   <option>water</option>
+                  <option>bike charges</option>
                 </select>
               </div>
             </div>
