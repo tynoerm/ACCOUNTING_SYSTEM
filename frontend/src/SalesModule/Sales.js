@@ -176,7 +176,10 @@ const Sales = () => {
                                 gap: "10px",
                             }}
                         >
-                             <div className="form-group col-md-2" style={{ flexBasis: "200px" }}>
+                            
+
+                            <div style={{ display: "flex", gap: "15px" }}>
+                            <div className="form-group col-md-2" style={{ flexBasis: "200px" }}>
                                     <label htmlFor="unitPrice">Balance</label>
                                     <input
                                         type="text"
@@ -186,8 +189,6 @@ const Sales = () => {
                                         onChange={(e) => setBalance(e.target.value)}
                                     />
                                 </div>
-
-                            <div style={{ display: "flex", gap: "15px" }}>
                                 <div className="form-group col-md-2" style={{ flexBasis: "200px" }}>
                                     <label htmlFor="quantity">Quantity</label>
                                     <input
