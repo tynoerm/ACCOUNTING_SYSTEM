@@ -123,10 +123,7 @@ const Expenses = () => {
     }
   };
 
-  const handleDelete = (id) => {
-    // Logic to delete item
-    console.log(`Deleting item with id: ${id}`);
-  };
+ 
 
   return (
     <div>
@@ -324,7 +321,7 @@ const Expenses = () => {
                 <td>{expense.expenseType || "N/A"}</td>
                 <td>{expense.amount !== undefined ? expense.amount : "N/A"}</td>
                 <td>{expense.authorisedBy || "N/A"}</td>
-                <button onClick={() => handleDelete(id)} className="bg-red-500 text-white px-3 py-1 rounded">
+                <button className="bg-red-500 text-white px-3 py-1 rounded">
                   Delete
                 </button>
 
