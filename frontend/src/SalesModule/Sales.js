@@ -36,7 +36,7 @@ const Sales = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-    
+
         const salesInsert = {
             date,
             cashierName,
@@ -49,7 +49,7 @@ const Sales = () => {
             vat: parseFloat(vat) || 0,
             totalPrice: parseFloat(totalPrice) || 0,
         };
-    
+
         axios
             .post("https://accounting-system-1.onrender.com/salesmodel/create-sale", salesInsert)
             .then((res) => {
@@ -62,7 +62,11 @@ const Sales = () => {
                 alert("Failed to create sale. Please try again.");
             });
     };
-    
+
+    const handleFinalize = () => {
+       
+        history.push("/salesModuleDashboard");
+      };
 
     return (
         <div>
@@ -214,9 +218,9 @@ const Sales = () => {
                             </div>
                         </div>
 
-                        <Link to = "/salesModuleDashboard" type="submit" className="btn btn-primary mt-3">
+                        <button onClick={handleFinalize} className="btn btn-primary mt-3">
                             FINALIZE
-                        </Link>
+                        </button>
                     </form>
                 </div>
             </div>
