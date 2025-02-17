@@ -8,7 +8,7 @@ import expensesSchema from "../../models/ExpensesModule/expenses.js"
 let router = express.Router();
 
 //create an expense (petty cash)
-router.route("/create-sale").post(async (req, res, next) => {
+router.route("/create-expense").post(async (req, res, next) => {
     await expensesSchema
         .create(req.body)
         .then((result) => {
