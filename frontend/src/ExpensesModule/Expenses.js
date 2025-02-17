@@ -251,6 +251,7 @@ const [error , setError] = useState("");
                   <option>water</option>
                   <option>bike charges</option>
                   <option>airtime</option>
+                  <option>shop expenses</option>
                 </select>
               </div>
             </div>
