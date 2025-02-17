@@ -182,7 +182,7 @@ const Sales = () => {
                             <div className="form-group col-md-2" style={{ flexBasis: "200px" }}>
                                     <label htmlFor="unitPrice">Balance</label>
                                     <input
-                                        type="text"
+                                        type="number"
                                         className="form-control"
                                         id="balance"
                                         value={balance}
