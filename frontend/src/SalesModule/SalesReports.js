@@ -23,7 +23,7 @@ const SalesReports = () => {
 
         useEffect(() => {
             axios
-               .get("https://accounting-system-1.onrender.com/salesmodel")
+               .get("http://localhost:3001/salesmodel")
                .then((res) => {
                 setSalesReportsForm(res.data.data);
                })
@@ -41,7 +41,7 @@ const SalesReports = () => {
   }
   const handleDownload = async (type) => {
     try {
-      const response = await axios.get(`https://accounting-system-1.onrender.com/salesmodel/download/${type}`, {
+      const response = await axios.get(`https://accounting-system-f2il.onrender.com/salesmodel/download/${type}`, {
         responseType: "blob", // Important for file download
       });
 
@@ -95,6 +95,7 @@ const SalesReports = () => {
             <th>Customer Name:</th>
             <th>Item Description:</th>
             <th>Currency:</th>
+            <th>Balance</th>
             <th>Quantity</th>
             <th>Unit Price</th>
             <th>VAT</th>
@@ -112,6 +113,7 @@ const SalesReports = () => {
                 <td>{salesmodel.customerName || "N/A"}</td>
                 <td>{salesmodel.itemDescription || "N/A"}</td>
                 <td>{salesmodel.currency || "N/A"}</td>
+                <td>{salesmodel.balance || "N/A"}</td>
                 <td>{salesmodel.quantity || "N/A"}</td>
                 <td>{salesmodel.unitPrice || "N/A"}</td>
                 <td>{salesmodel.vat || "N/A"}</td>
