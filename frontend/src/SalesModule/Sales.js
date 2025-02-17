@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link ,useNavigate} from "react-router-dom";
 import axios from "axios";
 
 const Sales = () => {
@@ -63,11 +63,13 @@ const Sales = () => {
             });
     };
 
-    const handleFinalize = () => {
-       
-        history.push("/salesModuleDashboard");
-      };
+    const navigate = useNavigate(); // Initialize the navigate function
 
+    const handleFinalize = () => {
+      // Your insert or submit logic here (if necessary)
+      navigate('/salesModuleDashboard'); // Navigate to the new route
+    };
+  
     return (
         <div>
             <nav className="navbar bg-grey border-bottom border-body mb-3 shadow-sm p-3 rounded bg-dark border-bottom">
