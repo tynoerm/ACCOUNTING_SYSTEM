@@ -12,6 +12,12 @@ let salesSchema = new Schema(
         itemDescription: String,
         paymentMethod: String,
         currency: String,
+
+        balance: {
+            type: Number,
+            default: 0,
+        },
+
         quantity: {
             type: Number,
             default: 0,
