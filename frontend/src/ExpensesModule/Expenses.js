@@ -27,7 +27,7 @@ const Expenses = () => {
   const [amount, setAmount] = useState("");
   const [authorisedBy, setAuthorisedBy] = useState("");
 
-const [error , setError] = useState("");
+  const [error, setError] = useState("");
 
   const handleDateChange = (e) => {
     setDate(e.target.value);
@@ -51,34 +51,34 @@ const [error , setError] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-  
+
     // String Validation (Ensure they are not empty and no special characters if needed)
     if (!date || !issuedTo || !description || !paymentMethod || !expenseType || !authorisedBy) {
       setError("All fields are required.");
       return;
     }
-  
+
     // Allow only letters, spaces, and basic punctuation for the string fields (adjust as necessary)
     const stringPattern = /^[A-Za-z\s.,!?]+$/;
     if (!stringPattern.test(issuedTo) || !stringPattern.test(authorisedBy)) {
       setError("Issued To and Authorised By should only contain letters and spaces.");
       return;
     }
-  
+
     if (description.length < 5) {
       setError("Description should be at least 5 characters long.");
       return;
     }
-  
+
     // Number Validation for Amount (Ensure it's a valid positive number)
     if (isNaN(amount) || amount <= 0) {
       setError("Amount must be a positive number.");
       return;
     }
-  
+
     // Clear error message before submitting
     setError("");
-  
+
     const expensesInsert = {
       date,
       issuedTo,
@@ -88,7 +88,7 @@ const [error , setError] = useState("");
       amount,
       authorisedBy
     };
-  
+
     // Send data to the backend
     axios
       .post("https://accounting-system-1.onrender.com/expense/create-expense", expensesInsert)
@@ -101,7 +101,7 @@ const [error , setError] = useState("");
         console.error(error);
         setError("An error occurred while submitting the expense.");
       });
-      setShow(false)
+    setShow(false)
   };
 
 
@@ -123,6 +123,10 @@ const [error , setError] = useState("");
     }
   };
 
+  const handleDelete = (id) => {
+    // Logic to delete item
+    console.log(`Deleting item with id: ${id}`);
+  };
 
   return (
     <div>
@@ -150,11 +154,11 @@ const [error , setError] = useState("");
         <Link to="/" className="btn btn-primary px-4">
           BACK
         </Link>
-        
+
       </div>
 
 
-      
+
 
 
 
@@ -173,7 +177,7 @@ const [error , setError] = useState("");
         </Modal.Header>
         <Modal.Body>
           <form onSubmit={handleSubmit}>
-          {error && <div className="alert alert-danger">{error}</div>}
+            {error && <div className="alert alert-danger">{error}</div>}
             {/* Form Fields */}
             <div className="row mb-3">
               <div className="col-md-6">
@@ -303,6 +307,8 @@ const [error , setError] = useState("");
             <th>Expense Type:</th>
             <th>Amount:</th>
             <th>Authorised By:</th>
+            <th>Actions:</th>
+
 
           </tr>
         </thead>
@@ -318,6 +324,9 @@ const [error , setError] = useState("");
                 <td>{expense.expenseType || "N/A"}</td>
                 <td>{expense.amount !== undefined ? expense.amount : "N/A"}</td>
                 <td>{expense.authorisedBy || "N/A"}</td>
+                <button onClick={() => handleDelete(id)} className="bg-red-500 text-white px-3 py-1 rounded">
+                  Delete
+                </button>
 
               </tr>
             );
