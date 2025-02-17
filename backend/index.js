@@ -19,8 +19,8 @@ app.use(cors(corsOptions));
 mongoose.connect("mongodb+srv://accountingsystem:EwLtxAVHQeYbn5bQ@cluster0.tkqyx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  connectTimeoutMS: 30000,  // 30 seconds for connection timeout
-  socketTimeoutMS: 30000,   // 30 seconds for socket timeout
+  connectTimeoutMS: 40000,  // 30 seconds for connection timeout
+  socketTimeoutMS: 40000,   // 30 seconds for socket timeout
 })
   .then((x) => {
     console.log(`Connected to Mongo! Database name: "${x.connections[0].name}"`);
