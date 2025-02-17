@@ -11,6 +11,7 @@ const Sales = () => {
     const [customerName, setCustomerName] = useState("");
     const [itemDescription, setItemDescription] = useState("");
     const [currency, setCurrency] = useState("");
+    const [balance, setBalance] = useState("");
     const [quantity, setQuantity] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("");
     const [unitPrice, setUnitPrice] = useState("");
@@ -44,6 +45,7 @@ const Sales = () => {
             itemDescription,
             paymentMethod,
             currency,
+            balance,
             quantity: parseFloat(quantity) || 0,
             unitPrice: parseFloat(unitPrice) || 0,
             vat: parseFloat(vat) || 0,
@@ -174,6 +176,17 @@ const Sales = () => {
                                 gap: "10px",
                             }}
                         >
+                             <div className="form-group col-md-2" style={{ flexBasis: "200px" }}>
+                                    <label htmlFor="unitPrice">Balance</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        id="balance"
+                                        value={balance}
+                                        onChange={(e) => setBalance(e.target.value)}
+                                    />
+                                </div>
+
                             <div style={{ display: "flex", gap: "15px" }}>
                                 <div className="form-group col-md-2" style={{ flexBasis: "200px" }}>
                                     <label htmlFor="quantity">Quantity</label>
