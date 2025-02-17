@@ -8,19 +8,20 @@ import expensesSchema from "../../models/ExpensesModule/expenses.js"
 let router = express.Router();
 
 //create an expense (petty cash)
-router.route("/create-expense").post(async (req, res, next) => {
-    await expensesSchema 
-     .create(req.body)
-     .then((result) => {
-        res.json({
-            data: result,
-            message: "pettycash created successfully",
-            status: 200,
+router.route("/create-sale").post(async (req, res, next) => {
+    await expensesSchema
+        .create(req.body)
+        .then((result) => {
+            res.json({
+                data: result,
+                message: "record created successfully",
+                status: 200,
+            });
+        })
+        .catch((err) => {
+            console.log(err); // FIX: Change `console.log(data.err)` to `console.log(err)`
+            return next(err);
         });
-     })
-     .catch((err) => {
-        return next(err); 
-     });
 });
 
 router.route("/").get(async (req,res,next) => {
