@@ -9,7 +9,7 @@ const Expenses = () => {
 
 
   const [expensesForm, setExpensesForm] = useState([]);
-  const [filteredExpenses, setFilteredExpenses] = useState([]);
+
 
   const [modalShow, setModalShow] = useState(false);
   const [show, setShow] = useState(false);
@@ -29,13 +29,14 @@ const Expenses = () => {
 
   const [error, setError] = useState("");
 
-  const handleDateChange = (e) => {
-    setDate(e.target.value);
-    const filtered = expensesForm.filter(expenses =>
-      expenses.date.includes(e.target.value)
-    );
-    setFilteredExpenses(filtered);
-  };
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+ 
+ 
+  const filteredExpenses = expensesForm.filter(q => {
+    const expenseDate = q.date ? new Date(q.date).toISOString().split("T")[0] : "";
+    return expenseDate === selectedDate;
+  });
+  
 
   useEffect(() => {
     axios
@@ -123,7 +124,6 @@ const Expenses = () => {
     }
   };
 
- 
 
   return (
     <div>
@@ -155,6 +155,10 @@ const Expenses = () => {
       </div>
 
 
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h2 className="text-secondary">Expenses for {selectedDate}</h2>
+        <input type="date" className="form-control w-auto" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+      </div>
 
 
 
@@ -295,7 +299,7 @@ const Expenses = () => {
 
 
       <table className="table table-striped table-bordered">
-        <thead>
+        <thead className="table-dark">
           <tr>
             <th>Date:</th>
             <th>Issued To:</th>
@@ -304,15 +308,12 @@ const Expenses = () => {
             <th>Expense Type:</th>
             <th>Amount:</th>
             <th>Authorised By:</th>
-            <th>Actions:</th>
-
-
           </tr>
         </thead>
 
         <tbody>
-          {expensesForm.map((expense, index) => {
-            return (
+          {filteredExpenses.length > 0 ? (
+            filteredExpenses.map((expense, index) => (
               <tr key={index}>
                 <td>{expense.date ? expense.date.split("T")[0] : "N/A"}</td> {/* Handle null dates */}
                 <td>{expense.issuedTo || "N/A"}</td>
@@ -321,15 +322,14 @@ const Expenses = () => {
                 <td>{expense.expenseType || "N/A"}</td>
                 <td>{expense.amount !== undefined ? expense.amount : "N/A"}</td>
                 <td>{expense.authorisedBy || "N/A"}</td>
-                <button className="bg-red-500 text-white px-3 py-1 rounded">
-                  Delete
-                </button>
-
               </tr>
-            );
-          })}
+            ))
+          ) : (
+            <tr>
+              <td colSpan="7">No expense is found per selected date</td> {/* Fix column span to match column count */}
+            </tr>
+          )}
         </tbody>
-
       </table>
 
 
