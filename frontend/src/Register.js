@@ -4,7 +4,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { RiLoginBoxFill } from 'react-icons/ri';
 import { useNavigate } from 'react-router-dom';
-import image1 from './images/colcom.jpg';
+
 import { IoLogOutSharp } from "react-icons/io5";
 import { IoMdArrowRoundBack } from "react-icons/io";
 
@@ -67,7 +67,7 @@ function Register() {
             <nav className="navbar border-bottom shadow-lg p-1 mb-0 rounded" style={{ backgroundColor: 'white' }}>
                 <div className="container-fluid d-flex justify-content-between align-items-center">
                     <span className="navbar-brand text-black d-flex align-items-center">
-                        <img src={image1} alt="Login Icon" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+                        
                         &nbsp;<b>REGISTER NEW USER</b>
                     </span>
 
