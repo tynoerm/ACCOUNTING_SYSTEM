@@ -18,7 +18,7 @@ import Quotation from './SalesModule/Quotation.js';
 import SalesReports from './SalesModule/SalesReports.js';
 
 import Login from './Login';
-import Register from '/Register';
+import Register from './Register';
 
 
 
