@@ -9,7 +9,7 @@ import image1 from './images/colcom.jpg';
 import { IoLogOutSharp } from "react-icons/io5";
 import { IoMdArrowRoundBack } from "react-icons/io";
 
-function UserManagement() {
+function Register() {
     const [fullname, setFullname] = useState('');
     const [username, setUsername] = useState('');
     const [storename, setStorename] = useState('');
@@ -30,13 +30,12 @@ function UserManagement() {
         setLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:3001/users/create-user', {
-                fullName,
-                employerNumber,
-                password,   // password == nationalId
-                nationalId,
+            const response = await axios.post('https://accounting-system-1.onrender.com/users/create-user', {
+                fullname,
+                username,
+                password,  
                 role,
-                department,
+                storename,
             });
 
             if (response.status === 201 || response.status === 200) {
@@ -186,11 +185,11 @@ function UserManagement() {
                 </div>
 
                 <footer className="text-white bg-dark text-center p-2 fixed-bottom">
-                    &copy; Colcom Foods Private Limited. All rights reserved.
+                    &copy; TIN PHIL INVESTMENTS. All rights reserved.
                 </footer>
             </div>
         </>
     );
 }
 
-export default UserManagement;
+export default Register;

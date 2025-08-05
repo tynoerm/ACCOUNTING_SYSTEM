@@ -17,7 +17,7 @@ function Login({ setLoggedIn, login }) {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:3001/users/login', {
+      const response = await axios.post('https://accounting-system-1.onrender.com/users/login', {
         username,
         password,
       });
