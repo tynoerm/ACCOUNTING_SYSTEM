@@ -33,7 +33,7 @@ function Login({ setLoggedIn, login }) {
         login(role);
 
         localStorage.setItem('role', role.toLowerCase());
-        localStorage.setItem('employeeNumber', employeeNumber);
+        localStorage.setItem('storename', storename);
 
         toast.success('Login successful');
         navigate('/MainDashboard', {
@@ -58,11 +58,7 @@ function Login({ setLoggedIn, login }) {
       <nav className="navbar border-bottom shadow-lg p-1 mb-0 rounded bg-light">
         <div className="container-fluid">
           <span className="navbar-brand text-dark">
-            <img
-              src="/logo.png" // Ensure you add your logo image path here
-              alt="Login Icon"
-              style={{ width: '40px', height: '40px', objectFit: 'contain' }}
-            />
+            
             &nbsp;
             <b>TIN PHIL INVESTMENTS</b>
           </span>
