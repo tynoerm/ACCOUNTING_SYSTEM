@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import { RiLoginBoxFill } from 'react-icons/ri';
 import { useNavigate } from 'react-router-dom';
-
 import { IoLogOutSharp } from "react-icons/io5";
 import { IoMdArrowRoundBack } from "react-icons/io";
 
@@ -32,7 +29,8 @@ function Register() {
             });
 
             if (response.status === 201 || response.status === 200) {
-                toast.success('User registered successfully');
+                // Optional: alert fallback
+                alert('User registered successfully');
 
                 const userData = {
                     fullname,
@@ -51,10 +49,10 @@ function Register() {
 
                 navigate('/users', { state: { newUser: userData } });
             } else {
-                toast.error('Registration failed');
+                alert('Registration failed');
             }
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Something went wrong');
+            alert(err.response?.data?.message || 'Something went wrong');
         } finally {
             setLoading(false);
         }
@@ -67,10 +65,8 @@ function Register() {
             <nav className="navbar border-bottom shadow-lg p-1 mb-0 rounded" style={{ backgroundColor: 'white' }}>
                 <div className="container-fluid d-flex justify-content-between align-items-center">
                     <span className="navbar-brand text-black d-flex align-items-center">
-                        
                         &nbsp;<b>REGISTER NEW USER</b>
                     </span>
-
                     <div className="d-flex gap-2">
                         <button onClick={handleBack} className="btn btn-primary">
                             <b><IoMdArrowRoundBack /> Back</b>
@@ -87,7 +83,6 @@ function Register() {
 
             <div className="d-flex justify-content-center align-items-center bg-light" style={{ height: 'calc(100vh - 70px)' }}>
                 <div className="card p-4 shadow" style={{ width: '80%', maxWidth: '700px' }}>
-                    <ToastContainer />
                     <h5 className="text-center mb-3">
                         <b><RiLoginBoxFill /> ADD A NEW USER</b>
                     </h5>

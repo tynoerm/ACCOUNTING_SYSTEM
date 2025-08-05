@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import { RiLoginBoxFill } from 'react-icons/ri';
 
 function Login({ setLoggedIn, login }) {
@@ -33,20 +31,20 @@ function Login({ setLoggedIn, login }) {
         login(role);
 
         localStorage.setItem('role', role.toLowerCase());
-        localStorage.setItem('storename', storename);
+        localStorage.setItem('employeeNumber', employeeNumber);
 
-        toast.success('Login successful');
-        navigate('/MainDashboard', {
+        alert('Login successful');
+        navigate('/Dashboard', {
           state: { role, dep: department, division },
         });
       } else {
-        toast.error('Invalid credentials');
+        alert('Invalid credentials');
       }
     } catch (err) {
       if (err.response?.data?.message) {
-        toast.error(err.response.data.message);
+        alert(err.response.data.message);
       } else {
-        toast.error('Login failed');
+        alert('Login failed');
       }
     } finally {
       setLoading(false);
@@ -58,7 +56,6 @@ function Login({ setLoggedIn, login }) {
       <nav className="navbar border-bottom shadow-lg p-1 mb-0 rounded bg-light">
         <div className="container-fluid">
           <span className="navbar-brand text-dark">
-            
             &nbsp;
             <b>TIN PHIL INVESTMENTS</b>
           </span>
@@ -70,7 +67,6 @@ function Login({ setLoggedIn, login }) {
         style={{ height: 'calc(100vh - 70px)' }}
       >
         <div className="card p-3 shadow" style={{ width: '400px' }}>
-          <ToastContainer />
           <div className="text-center mb-2">
             <RiLoginBoxFill size={40} />
           </div>
