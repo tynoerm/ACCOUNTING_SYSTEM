@@ -17,12 +17,17 @@ import Stock from './StockModule/Stock.js';
 import Quotation from './SalesModule/Quotation.js';
 import SalesReports from './SalesModule/SalesReports.js';
 
+import Login from './Login';
+import Register from '/Register';
+
+
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="" element={<Dashboard/>} />
+        <Route path="" element={<Login/>} />
+        <Route path= "Register" element = {<Register/>} />
         <Route path="Sales" element={<Sales/>} />
         <Route path="SalesModuleDashboard" element={<SalesModuleDashboard/>} />    
         <Route path="Quotation" element={<Quotation/>} />
