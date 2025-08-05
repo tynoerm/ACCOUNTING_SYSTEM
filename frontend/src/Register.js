@@ -5,7 +5,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import { RiLoginBoxFill } from 'react-icons/ri';
 import { useNavigate } from 'react-router-dom';
 import image1 from './images/colcom.jpg';
-
 import { IoLogOutSharp } from "react-icons/io5";
 import { IoMdArrowRoundBack } from "react-icons/io";
 
@@ -13,17 +12,11 @@ function Register() {
     const [fullname, setFullname] = useState('');
     const [username, setUsername] = useState('');
     const [storename, setStorename] = useState('');
-    const [password, setPassword] = useState('');  // will mirror nationalId
+    const [password, setPassword] = useState('');
     const [role, setRole] = useState('');
     const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
-
-    // Sync password with nationalId whenever nationalId changes
-    const handleNationalIdChange = (e) => {
-        setNationalId(e.target.value);
-        setPassword(e.target.value);
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -33,7 +26,7 @@ function Register() {
             const response = await axios.post('https://accounting-system-1.onrender.com/users/create-user', {
                 fullname,
                 username,
-                password,  
+                password,
                 role,
                 storename,
             });
@@ -42,23 +35,20 @@ function Register() {
                 toast.success('User registered successfully');
 
                 const userData = {
-                    fullName,
-                    employerNumber,
+                    fullname,
+                    username,
+                    storename,
                     password,
-                    nationalId,
                     role,
-                    department,
                 };
 
                 // Reset form fields
-                setFullName('');
-                setEmployerNumber('');
-                setNationalId('');
+                setFullname('');
+                setUsername('');
+                setStorename('');
                 setPassword('');
                 setRole('');
-                setDepartment('');
 
-                // Navigate to users page with new user data
                 navigate('/users', { state: { newUser: userData } });
             } else {
                 toast.error('Registration failed');
@@ -109,34 +99,19 @@ function Register() {
                                 <input
                                     type="text"
                                     className="form-control"
-                                    value={fullName}
-                                    onChange={(e) => setFullName(e.target.value)}
+                                    value={fullname}
+                                    onChange={(e) => setFullname(e.target.value)}
                                     required
                                 />
                             </div>
 
                             <div className="col-md-6 mb-3">
-                                <label>Employer Number:</label>
+                                <label>Username:</label>
                                 <input
                                     type="text"
                                     className="form-control"
-                                    value={employerNumber}
-                                    onChange={(e) => setEmployerNumber(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="row">
-                            {/* Password input removed, password is set automatically */}
-                            
-                            <div className="col-md-6 mb-3">
-                                <label>National ID:</label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    value={nationalId}
-                                    onChange={handleNationalIdChange}
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
                                     required
                                 />
                             </div>
@@ -144,6 +119,30 @@ function Register() {
 
                         <div className="row">
                             <div className="col-md-6 mb-3">
+                                <label>Store Name:</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={storename}
+                                    onChange={(e) => setStorename(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="col-md-6 mb-3">
+                                <label>Password:</label>
+                                <input
+                                    type="password"
+                                    className="form-control"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="row">
+                            <div className="col-md-12 mb-3">
                                 <label>Role:</label>
                                 <select
                                     className="form-control"
@@ -156,24 +155,6 @@ function Register() {
                                     <option value="deptmanager">Department Manager</option>
                                     <option value="hr">Human Resources</option>
                                     <option value="itmanagement">IT Management</option>
-                                </select>
-                            </div>
-
-                            <div className="col-md-6 mb-3">
-                                <label>Department:</label>
-                                <select
-                                    className="form-control"
-                                    value={department}
-                                    onChange={(e) => setDepartment(e.target.value)}
-                                    required
-                                >
-                                    <option value="">-- Select Department --</option>
-                                    <option value="finance">Finance</option>
-                                    <option value="operations">Operations</option>
-                                    <option value="sales">Sales</option>
-                                    <option value="itdepartment">IT Department</option>
-                                    <option value="retailshops">Retail Shops</option>
-                                    <option value="nec">NEC</option>
                                 </select>
                             </div>
                         </div>

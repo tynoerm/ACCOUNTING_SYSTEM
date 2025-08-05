@@ -4,7 +4,6 @@ import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { RiLoginBoxFill } from 'react-icons/ri';
-import image1 from './images/colcom.jpg';
 
 function Login({ setLoggedIn, login }) {
   const [username, setUsername] = useState('');
@@ -24,7 +23,7 @@ function Login({ setLoggedIn, login }) {
 
       console.log('Login response:', response.data);
 
-      const { role, department, division, employeeNumber: returnedEmployeeNumber } = response.data.user;
+      const { role, department, division, employeeNumber } = response.data.user;
 
       if (response.status === 200 && role) {
         // Clear previous session
@@ -34,11 +33,12 @@ function Login({ setLoggedIn, login }) {
         login(role);
 
         localStorage.setItem('role', role.toLowerCase());
-        localStorage.setItem('storename', returnedStorename);
-     
+        localStorage.setItem('employeeNumber', employeeNumber);
 
         toast.success('Login successful');
-        navigate('/MainDashboard', { state: { role, dep: department, division } });
+        navigate('/MainDashboard', {
+          state: { role, dep: department, division },
+        });
       } else {
         toast.error('Invalid credentials');
       }
@@ -59,7 +59,7 @@ function Login({ setLoggedIn, login }) {
         <div className="container-fluid">
           <span className="navbar-brand text-dark">
             <img
-              src={image1}
+              src="/logo.png" // Ensure you add your logo image path here
               alt="Login Icon"
               style={{ width: '40px', height: '40px', objectFit: 'contain' }}
             />
@@ -75,27 +75,31 @@ function Login({ setLoggedIn, login }) {
       >
         <div className="card p-3 shadow" style={{ width: '400px' }}>
           <ToastContainer />
-          <RiLoginBoxFill />
-          <h2 className="text-center mb-4"><b>LOGIN</b></h2>
+          <div className="text-center mb-2">
+            <RiLoginBoxFill size={40} />
+          </div>
+          <h2 className="text-center mb-4">
+            <b>LOGIN</b>
+          </h2>
 
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
               <input
                 type="text"
-                placeholder="username"
+                placeholder="Username"
                 className="form-control"
                 value={username}
-                onChange={(e) => setUsername.target.value)}
+                onChange={(e) => setUsername(e.target.value)}
                 required
               />
             </div>
             <div className="mb-3">
               <input
                 type="password"
-                placeholder="password"
+                placeholder="Password"
                 className="form-control"
                 value={password}
-                onChange={(e) => setNationalID(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
@@ -103,7 +107,7 @@ function Login({ setLoggedIn, login }) {
               <b>{loading ? 'Logging in...' : 'LOGIN'}</b>
             </button>
             <div className="text-center mt-2">
-              <Link to="/UserManagement"><i></i></Link>
+              <Link to="/UserManagement">Go to User Management</Link>
             </div>
           </form>
         </div>
