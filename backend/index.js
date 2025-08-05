@@ -34,12 +34,16 @@ import { quotationRoutes } from './routes/SalesModule/quotation.js';
 import { expensesRoutes } from './routes/ExpensesModule/expenses.js';
 import { stocksRoutes } from './routes/StockModule/stocks.js';
 import { salesRoutes } from './routes/SalesModule/sales.js';
+import {usersRoutes} from '.routes/UsersModule/users.js'
+
+
 
 // Route Use
 app.use("/quotation", quotationRoutes);
 app.use("/expense", expensesRoutes);
 app.use("/stock", stocksRoutes);
 app.use("/salesmodel", salesRoutes);
+app.use("/users", usersRoutes);
 
 // Start Server
 const port = process.env.PORT || 3001;
