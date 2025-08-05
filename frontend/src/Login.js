@@ -105,7 +105,7 @@ function Login({ setLoggedIn, login }) {
         </div>
 
         <footer className="text-white bg-dark text-center p-2 position-fixed bottom-0 w-100">
-          &copy; Colcom Foods Private Limited. All rights reserved.
+          &copy; TIN PHIL INVESTMENTS. All rights reserved.
         </footer>
       </div>
     </>
