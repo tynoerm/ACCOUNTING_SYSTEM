@@ -67,6 +67,12 @@ const Sales = () => {
 
     const navigate = useNavigate(); // Initialize the navigate function
 
+
+       const role = localStorage.getItem('role');
+const storename = localStorage.getItem('storename');
+const username = localStorage.getItem('username');
+
+    
     const handleFinalize = () => {
       // Your insert or submit logic here (if necessary)
       navigate('/salesModuleDashboard'); // Navigate to the new route
@@ -107,7 +113,7 @@ const Sales = () => {
                                     type="text"
                                     className="form-control"
                                     id="cashierName"
-                                    value={cashierName}
+                                    value={username}
                                     onChange={(e) => setCashierName(e.target.value)}
                                 />
                             </div>
@@ -245,3 +251,4 @@ const Sales = () => {
 };
 
 export default Sales;
+
