@@ -9,7 +9,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // ✅ Fix: Allow OPTIONS preflight, credentials, and all headers
 const corsOptions = {
-  origin: 'https://accounting-system-qlz4.vercel.app', // Your frontend
+  origin: 'https://accounting-system-seven.vercel.app', // Your frontend
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // include OPTIONS
   allowedHeaders: ['Content-Type', 'Authorization'], // allow needed headers
   credentials: true, // allow cookies/auth headers
@@ -57,3 +57,4 @@ const port = process.env.PORT || 3001;
 app.listen(port, () => {
   console.log('Connection Established Successfully on ' + port);
 });
+
