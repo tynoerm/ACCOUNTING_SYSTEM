@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
 
 // Connecting to MongoDB Database with options
-mongoose.connect("mongodb://localhost:27017/accounting", {
+mongoose.connect("mongodb+srv://accountingsystem:BVSeFcaSdMQNTDPk@cluster0.tkqyx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   connectTimeoutMS: 40000,  // 30 seconds for connection timeout
@@ -49,4 +49,5 @@ app.use("/users", usersRoutes);
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
   console.log("Connection Established Successfully on " + port);
+
 });
