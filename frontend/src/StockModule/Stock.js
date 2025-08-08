@@ -206,7 +206,7 @@ const username = localStorage.getItem('username');
                   type="text"
                   className="form-control"
                   id="receivedBy"
-                  value={receivedBy}
+                  value={username}
                   onChange={(e) => setReceivedBy(e.target.value)}
                 />
               </div>
@@ -319,5 +319,6 @@ const username = localStorage.getItem('username');
     </div>
   )
 }
+
 
 export default Stock;
