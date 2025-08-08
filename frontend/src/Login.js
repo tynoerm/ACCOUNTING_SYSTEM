@@ -9,55 +9,54 @@ function Login({ setLoggedIn, login }) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const response = await axios.post('https://accounting-system-1.onrender.com/users/login', {
-        username,
-        password,
-      });
+  try {
+    const response = await axios.post('https://accounting-system-1.onrender.com/users/login', {
+      username,
+      password,
+    });
 
-      console.log('Login response:', response.data);
+    console.log('Login response:', response.data);
 
-      const { role, department, division, employeeNumber } = response.data.user;
+    const { role, storename, username: returnedUsername } = response.data.user;
 
-      if (response.status === 200 && role) {
-        // Clear previous session
-        localStorage.clear();
+    if (response.status === 200 && role) {
+      localStorage.clear();
 
-        setLoggedIn(true);
-        login(role);
+      // ✅ Save to localStorage
+      localStorage.setItem('role', role);
+      localStorage.setItem('storename', storename);
+      localStorage.setItem('username', returnedUsername);
 
-        localStorage.setItem('role', role.toLowerCase());
-        localStorage.setItem('employeeNumber', employeeNumber);
+      setLoggedIn(true);
+      login(role);
 
-        alert('Login successful');
-        navigate('/Dashboard', {
-          state: { role, dep: department, division },
-        });
-      } else {
-        alert('Invalid credentials');
-      }
-    } catch (err) {
-      if (err.response?.data?.message) {
-        alert(err.response.data.message);
-      } else {
-        alert('Login failed');
-      }
-    } finally {
-      setLoading(false);
+      alert('Login successful');
+      navigate('/Dashboard');
+    } else {
+      alert('Invalid credentials');
     }
-  };
+  } catch (err) {
+    if (err.response?.data?.message) {
+      alert(err.response.data.message);
+    } else {
+      alert('Login failed');
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <>
       <nav className="navbar border-bottom shadow-lg p-1 mb-0 rounded bg-light">
         <div className="container-fluid">
           <span className="navbar-brand text-dark">
-            &nbsp;
-            <b>TIN PHIL INVESTMENTS</b>
+            &nbsp;<b>TIN PHIL INVESTMENTS</b>
           </span>
         </div>
       </nav>
@@ -99,7 +98,7 @@ function Login({ setLoggedIn, login }) {
               <b>{loading ? 'Logging in...' : 'LOGIN'}</b>
             </button>
             <div className="text-center mt-2">
-              <Link to="/UserManagement">Go to User Management</Link>
+          
             </div>
           </form>
         </div>

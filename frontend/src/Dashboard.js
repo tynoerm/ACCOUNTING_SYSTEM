@@ -5,6 +5,13 @@ import Footer from './Components/Footer.js';
 import { FaShoppingCart, FaRegMoneyBillAlt, FaWarehouse } from 'react-icons/fa';
 
 const Dashboard = () => {
+
+
+
+     
+
+
+
   return (
     <div style={styles.container}>
       <TopMenu />

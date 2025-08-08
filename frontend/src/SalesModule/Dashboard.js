@@ -7,18 +7,16 @@ const Dashboard = () => {
   return (
     <div style={styles.container}>
       {/* Navbar */}
-      <nav className="" style={styles.navbar}>
-        <a className="navbar-brand" style={styles.navbarBrand}>
+      <nav style={styles.navbar}>
+        <span className="navbar-brand" style={styles.navbarBrand}>
           <b>SALES MODULE DASHBOARD</b>
-        </a>
-       
+        </span>
       </nav>
 
       {/* Back Button */}
       <div className="d-flex justify-content-end">
-          <Link to = "/" className="btn btn-primary" style={styles.cardButton}>BACK</Link>
-
-        </div>
+        <Link to="/" className="btn btn-primary" style={styles.cardButton}>BACK</Link>
+      </div>
 
       {/* Dashboard Content */}
       <div className="row row-cols-1 row-cols-md-3 g-4" style={styles.cardContainer}>
@@ -65,7 +63,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-
       <Footer />
     </div>
   );
@@ -75,7 +72,7 @@ const styles = {
   container: {
     display: 'flex',
     flexDirection: 'column',
-    minHeight: '100vh',  // Make sure the container takes full height of the viewport
+    minHeight: '100vh',  // Full viewport height
     padding: '0 20px',
   },
   navbar: {
@@ -89,16 +86,9 @@ const styles = {
     fontSize: '24px',
     paddingLeft: '20px',
   },
-  backButton: {
-    fontSize: '16px',
-    padding: '10px 20px',
-    borderRadius: '5px',
-    backgroundColor: '#28a745',
-    border: 'none',
-  },
   cardContainer: {
     marginTop: '20px',
-    flexGrow: 1,  // This ensures the cards take up the remaining space
+    flexGrow: 1,
   },
   card: {
     backgroundColor: '#f8f9fa',
@@ -121,11 +111,10 @@ const styles = {
     padding: '8px 16px',
     fontSize: '16px',
     borderRadius: '5px',
-  },
-  footerContainer: {
-    marginTop: 'auto',  // Push footer to the bottom
-    padding: '20px',
+    textDecoration: 'none',
+    color: 'white',
   },
 };
 
 export default Dashboard;
+

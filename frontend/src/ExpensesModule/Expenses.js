@@ -1,42 +1,39 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from 'axios';
-import { Button, Modal, InputGroup, Form } from 'react-bootstrap';
-
-
+import { Button, Modal } from 'react-bootstrap';
 
 const Expenses = () => {
-
-
   const [expensesForm, setExpensesForm] = useState([]);
-
-
-  const [modalShow, setModalShow] = useState(false);
   const [show, setShow] = useState(false);
 
   const handleShow = () => setShow(true);
   const handleClose = () => setShow(false);
 
-
+  // Form state
   const [date, setDate] = useState("");
   const [issuedTo, setIssuedTo] = useState("");
   const [description, setDescription] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [expenseType, setExpenseType] = useState("");
-
   const [amount, setAmount] = useState("");
   const [authorisedBy, setAuthorisedBy] = useState("");
 
   const [error, setError] = useState("");
-
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
- 
- 
+
+  // Filter expenses by selectedDate
   const filteredExpenses = expensesForm.filter(q => {
     const expenseDate = q.date ? new Date(q.date).toISOString().split("T")[0] : "";
     return expenseDate === selectedDate;
   });
+
   
+
+       const role = localStorage.getItem('role');
+const storename = localStorage.getItem('storename');
+const username = localStorage.getItem('username');
+
 
   useEffect(() => {
     axios
@@ -49,17 +46,14 @@ const Expenses = () => {
       });
   }, []);
 
-
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // String Validation (Ensure they are not empty and no special characters if needed)
     if (!date || !issuedTo || !description || !paymentMethod || !expenseType || !authorisedBy) {
       setError("All fields are required.");
       return;
     }
 
-    // Allow only letters, spaces, and basic punctuation for the string fields (adjust as necessary)
     const stringPattern = /^[A-Za-z\s.,!?]+$/;
     if (!stringPattern.test(issuedTo) || !stringPattern.test(authorisedBy)) {
       setError("Issued To and Authorised By should only contain letters and spaces.");
@@ -71,13 +65,11 @@ const Expenses = () => {
       return;
     }
 
-    // Number Validation for Amount (Ensure it's a valid positive number)
     if (isNaN(amount) || amount <= 0) {
       setError("Amount must be a positive number.");
       return;
     }
 
-    // Clear error message before submitting
     setError("");
 
     const expensesInsert = {
@@ -90,7 +82,6 @@ const Expenses = () => {
       authorisedBy
     };
 
-    // Send data to the backend
     axios
       .post("https://accounting-system-1.onrender.com/expense/create-expense", expensesInsert)
       .then((res) => {
@@ -102,14 +93,12 @@ const Expenses = () => {
         console.error(error);
         setError("An error occurred while submitting the expense.");
       });
-    setShow(false)
   };
-
 
   const handleDownload = async (type) => {
     try {
       const response = await axios.get(`https://accounting-system-1.onrender.com/expense/download/${type}`, {
-        responseType: "blob", // Important for file download
+        responseType: "blob",
       });
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -124,46 +113,40 @@ const Expenses = () => {
     }
   };
 
-
   return (
     <div>
       <nav className="navbar navbar-dark bg-dark border-bottom border-light py-3">
         <a className="navbar-brand text-white" href="#">
           <b>EXPENSES MANAGEMENT</b>
         </a>
-
       </nav>
-
 
       <div className="d-flex justify-content-between my-4">
         <Button variant="success" onClick={handleShow} className="px-4">
           CREATE AN EXPENSE
         </Button>
         <div className="d-flex justify-content-center">
-
-          <Button
-            variant="primary" onClick={() => handleDownload("pdf")} className="px-4"><b> DOWNLOAD PDF</b>
+          <Button variant="primary" onClick={() => handleDownload("pdf")} className="px-4">
+            <b> DOWNLOAD PDF</b>
           </Button>
-          <Button
-            variant="success" onClick={() => handleDownload("excel")} className="px-4"> DOWNLOAD EXCEL
+          <Button variant="success" onClick={() => handleDownload("excel")} className="px-4">
+            DOWNLOAD EXCEL
           </Button>
         </div>
         <Link to="/" className="btn btn-primary px-4">
           BACK
         </Link>
-
       </div>
-
 
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2 className="text-secondary">Expenses for {selectedDate}</h2>
-        <input type="date" className="form-control w-auto" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+        <input
+          type="date"
+          className="form-control w-auto"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+        />
       </div>
-
-
-
-
-
 
       <Modal
         show={show}
@@ -179,7 +162,7 @@ const Expenses = () => {
         <Modal.Body>
           <form onSubmit={handleSubmit}>
             {error && <div className="alert alert-danger">{error}</div>}
-            {/* Form Fields */}
+
             <div className="row mb-3">
               <div className="col-md-6">
                 <label htmlFor="date" className="form-label">Date</label>
@@ -203,10 +186,7 @@ const Expenses = () => {
               </div>
             </div>
 
-            {/* Customer Information */}
-
-
-            <div className="col-md-6">
+            <div className="col-md-6 mb-3">
               <label className="form-label">Description</label>
               <textarea
                 type="text"
@@ -217,8 +197,6 @@ const Expenses = () => {
               />
             </div>
 
-
-            {/* Price and Payment Details */}
             <div style={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
               <div className="form-group col-md-4" style={{ flex: "1" }}>
                 <label htmlFor="paymentMethod">Payment Option</label>
@@ -227,8 +205,9 @@ const Expenses = () => {
                   className="form-control"
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
+                  defaultValue=""
                 >
-                  <option defaultValue>Choose...</option>
+                  <option value="" disabled>Choose...</option>
                   <option>Cash</option>
                   <option>Ecocash</option>
                   <option>Ecocash Zig</option>
@@ -236,14 +215,15 @@ const Expenses = () => {
                 </select>
               </div>
               <div className="form-group col-md-4" style={{ flex: "1" }}>
-                <label >Type of Expense</label>
+                <label>Type of Expense</label>
                 <select
                   id="expenseType"
                   className="form-control"
                   value={expenseType}
                   onChange={(e) => setExpenseType(e.target.value)}
+                  defaultValue=""
                 >
-                  <option defaultValue>Choose...</option>
+                  <option value="" disabled>Choose...</option>
                   <option>food</option>
                   <option>transport fee</option>
                   <option>fuel</option>
@@ -261,11 +241,9 @@ const Expenses = () => {
               </div>
             </div>
 
-
-
-            <div className="row mb-3">
+            <div className="row mb-3 mt-3">
               <div className="col-md-6">
-                <label htmlFor="vat" className="form-label">Amount</label>
+                <label htmlFor="amount" className="form-label">Amount</label>
                 <input
                   type="number"
                   className="form-control"
@@ -275,28 +253,23 @@ const Expenses = () => {
                 />
               </div>
               <div className="col-md-6">
-                <label htmlFor="totalPrice" className="form-label">AuthorisedBy</label>
+                <label htmlFor="authorisedBy" className="form-label">Authorised By</label>
                 <input
                   type="text"
                   className="form-control"
                   id="authorisedBy"
-                  value={authorisedBy}
-                  onChange={(e) => setAuthorisedBy(e.target.value)}
+                  value={username}
+                  disabled
                 />
               </div>
             </div>
 
-            {/* Submit Button */}
-            <Button variant="primary" type="submit" className="w-100 mt-4">FINALIZE EXPENSE</Button>
+            <Button variant="primary" type="submit" className="w-100 mt-4">
+              FINALIZE EXPENSE
+            </Button>
           </form>
         </Modal.Body>
       </Modal>
-
-
-
-
-
-
 
       <table className="table table-striped table-bordered">
         <thead className="table-dark">
@@ -315,7 +288,7 @@ const Expenses = () => {
           {filteredExpenses.length > 0 ? (
             filteredExpenses.map((expense, index) => (
               <tr key={index}>
-                <td>{expense.date ? expense.date.split("T")[0] : "N/A"}</td> {/* Handle null dates */}
+                <td>{expense.date ? expense.date.split("T")[0] : "N/A"}</td>
                 <td>{expense.issuedTo || "N/A"}</td>
                 <td>{expense.description || "N/A"}</td>
                 <td>{expense.paymentMethod || "N/A"}</td>
@@ -326,15 +299,13 @@ const Expenses = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="7">No expense is found per selected date</td> {/* Fix column span to match column count */}
+              <td colSpan="7">No expense is found per selected date</td>
             </tr>
           )}
         </tbody>
       </table>
-
-
     </div>
-  )
-}
+  );
+};
 
 export default Expenses;

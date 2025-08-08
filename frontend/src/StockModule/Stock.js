@@ -26,6 +26,10 @@ const Stock = () => {
   const [error, setError] = useState("")
 
 
+       const role = localStorage.getItem('role');
+const storename = localStorage.getItem('storename');
+const username = localStorage.getItem('username');
+
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
 

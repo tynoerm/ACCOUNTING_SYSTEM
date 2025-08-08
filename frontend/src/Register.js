@@ -6,7 +6,7 @@ import { IoLogOutSharp } from "react-icons/io5";
 import { IoMdArrowRoundBack } from "react-icons/io";
 
 function Register() {
-    const [fullname, setFullname] = useState('');
+    const [fullName, setFullName] = useState('');
     const [username, setUsername] = useState('');
     const [storename, setStorename] = useState('');
     const [password, setPassword] = useState('');
@@ -21,7 +21,7 @@ function Register() {
 
         try {
             const response = await axios.post('https://accounting-system-1.onrender.com/users/create-user', {
-                fullname,
+                fullName, // ✅ Correct key
                 username,
                 password,
                 role,
@@ -29,19 +29,18 @@ function Register() {
             });
 
             if (response.status === 201 || response.status === 200) {
-                // Optional: alert fallback
                 alert('User registered successfully');
 
                 const userData = {
-                    fullname,
+                    fullName,
                     username,
                     storename,
                     password,
                     role,
                 };
 
-                // Reset form fields
-                setFullname('');
+                // Reset form
+                setFullName('');
                 setUsername('');
                 setStorename('');
                 setPassword('');
@@ -94,8 +93,8 @@ function Register() {
                                 <input
                                     type="text"
                                     className="form-control"
-                                    value={fullname}
-                                    onChange={(e) => setFullname(e.target.value)}
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
                                     required
                                 />
                             </div>
@@ -113,17 +112,6 @@ function Register() {
                         </div>
 
                         <div className="row">
-                            <div className="col-md-6 mb-3">
-                                <label>Store Name:</label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    value={storename}
-                                    onChange={(e) => setStorename(e.target.value)}
-                                    required
-                                />
-                            </div>
-
                             <div className="col-md-6 mb-3">
                                 <label>Password:</label>
                                 <input
@@ -146,10 +134,25 @@ function Register() {
                                     required
                                 >
                                     <option value="">-- Select Role --</option>
-                                    <option value="client">Client</option>
-                                    <option value="deptmanager">Department Manager</option>
-                                    <option value="hr">Human Resources</option>
-                                    <option value="itmanagement">IT Management</option>
+                                    <option value="clerk">clerk</option>
+                                    <option value="admin">admin</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="row">
+                            <div className="col-md-12 mb-3">
+                                <label>Storename:</label>
+                                <select
+                                    className="form-control"
+                                    value={storename}
+                                    onChange={(e) => setStorename(e.target.value)}
+                                    required
+                                >
+                                    <option value="">-- Select Store --</option>
+                                    <option value="gweru">gweru</option>
+                                    <option value="kaguvi">kaguvi</option>
+                                    <option value="admin">admin</option>
                                 </select>
                             </div>
                         </div>
