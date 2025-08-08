@@ -1,21 +1,20 @@
-// users.model.js
-import { Schema as _Schema, model } from 'mongoose';
-const Schema = _Schema;
+import mongoose from 'mongoose';
+
+const { Schema, model } = mongoose; // ✅ Destructure Schema and model from mongoose
 
 const usersSchema = new Schema({
-  fullname: { type: String, required: true, trim: true },
-  username: { type: String, required: true},
-  
+  fullName: { type: String, required: true, trim: true },
+  username: { type: String, required: true },
   password: { type: String, required: true },
-  role: { 
-    type: String, 
-    enum: ['client', 'deptmanager', 'hr', 'itmanagement'], 
-    required: true 
+  role: {
+    type: String,
+    enum: ['clerk', 'admin'],
+    required: true
   },
-  storename: { 
-    type: String, 
-    enum: ['gweru', 'kaguvi', 'admin'], 
-    required: true 
+  storename: {
+    type: String,
+    enum: ['gweru', 'kaguvi', 'admin'],
+    required: true
   },
   createdAt: { type: Date, default: Date.now }
 }, { collection: 'users' });

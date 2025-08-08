@@ -1,73 +1,86 @@
 import express from "express";
-import bcrypt from "bcryptjs"; // Password hashing (optional, but highly recommended)
-import usersSchema from "../models/UsersModule/users.js";
+import bcrypt from "bcrypt";
+import usersSchema from "../../models/UsersModule/users.js";
 
 const router = express.Router();
 
 // REGISTER USER
 router.post("/create-user", async (req, res, next) => {
   try {
-    const { fullname, username, storename, role, password} = req.body;
+    const {
+      fullName, // ✅ matches frontend now
+      username,
+      storename,
+      role,
+      password,
+    } = req.body;
 
-    // Check if employerNumber already exists
-    const existingUser = await usersSchema.findOne({ username });
-    if (existingUser) {
-      return res.status(409).json({ message: "username already exists" });
+    if (!fullName || !username || !storename || !role || !password) {
+      return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Use nationalId as password and hash it
-    const hashedPassword = await bcrypt.hash(nationalId, 10);
+    const existingUser = await usersSchema.findOne({ username });
+    if (existingUser) {
+      return res.status(409).json({ message: "Username already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await usersSchema.create({
       fullName,
       username,
-      password: hashedPassword, // password is hashed nationalId
-      storname,
+      password: hashedPassword,
+      storename,
       role,
-      
     });
 
     return res.status(201).json({
-      data: user,
       message: "User created successfully",
-      status: 201,
+      data: {
+        id: user._id,
+        fullName: user.fullName,
+        username: user.username,
+        role: user.role,
+        storename: user.storename,
+      },
     });
   } catch (err) {
     next(err);
   }
 });
 
-
-// LOGIN USER
-router.post("/login", async (req, res) => {
-  const { employerNumber, nationalId } = req.body; // user sends both
-
+router.post("/login", async (req, res, next) => {
   try {
-    // Find user by employerNumber
-    const user = await usersSchema.findOne({ employerNumber });
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ message: "Username and password are required" });
+    }
+
+    const user = await usersSchema.findOne({ username });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(401).json({ message: "Invalid username or password" });
     }
 
-    // Compare input nationalId with stored nationalId (plain text)
-    if (nationalId !== user.nationalId) {
-      return res.status(401).json({ message: "Invalid National ID" });
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid username or password" });
     }
 
-    // Login successful
-    return res.status(200).json({
+    // Successful login
+    res.status(200).json({
       message: "Login successful",
       user: {
-        fullName: user.fullName,
+        username: user.username,
         role: user.role,
-        department: user.department,
-        employerNumber: user.employerNumber,
+        storename: user.storename,
       },
     });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error" });
+    next(err);
   }
 });
-export { router as usersRoutes }
+
+export { router as usersRoutes };

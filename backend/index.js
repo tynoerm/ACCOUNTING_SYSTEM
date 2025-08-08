@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
 
 // Connecting to MongoDB Database with options
-mongoose.connect("mongodb+srv://accountingsystem:kYGcvDeMBQABSQAR@cluster0.tkqyx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
+mongoose.connect("mongodb://localhost:27017/accounting", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   connectTimeoutMS: 40000,  // 30 seconds for connection timeout
@@ -34,7 +34,7 @@ import { quotationRoutes } from './routes/SalesModule/quotation.js';
 import { expensesRoutes } from './routes/ExpensesModule/expenses.js';
 import { stocksRoutes } from './routes/StockModule/stocks.js';
 import { salesRoutes } from './routes/SalesModule/sales.js';
-import {usersRoutes} from '.routes/UsersModule/users.js'
+import {usersRoutes} from './routes/UsersModule/users.js'
 
 
 
