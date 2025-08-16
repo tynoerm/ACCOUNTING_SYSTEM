@@ -259,7 +259,7 @@ const username = localStorage.getItem('username');
                   type="text"
                   className="form-control"
                   id="authorisedBy"
-                  value={authorisedBy}
+                  value={username}
                   disabled
                 />
               </div>
@@ -310,5 +310,6 @@ const username = localStorage.getItem('username');
 };
 
 export default Expenses;
+
 
 
