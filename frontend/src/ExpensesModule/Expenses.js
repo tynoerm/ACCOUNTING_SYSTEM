@@ -235,7 +235,7 @@ const username = localStorage.getItem('username');
                   <option>electricity</option>
                   <option>water</option>
                   <option>bike charges</option>
-                    option>city parking</option>
+                    <option>city parking</option>
                   <option>airtime</option>
                   <option>shop expenses</option>
                 </select>
@@ -310,6 +310,7 @@ const username = localStorage.getItem('username');
 };
 
 export default Expenses;
+
 
 
 
