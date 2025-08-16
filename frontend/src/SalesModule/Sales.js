@@ -114,7 +114,7 @@ const username = localStorage.getItem('username');
                                     className="form-control"
                                     id="cashierName"
                                     value={username}
-                                    onChange={(e) => setCashierName(e.target.value)}
+                                    disabled
                                 />
                             </div>
                         </div>
@@ -251,4 +251,5 @@ const username = localStorage.getItem('username');
 };
 
 export default Sales;
+
 
