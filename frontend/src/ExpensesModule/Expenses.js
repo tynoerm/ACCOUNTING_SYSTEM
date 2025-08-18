@@ -260,7 +260,7 @@ const username = localStorage.getItem('username');
                   className="form-control"
                   id="authorisedBy"
                   value={authorisedBy}
-                  
+                  onChange={(e) => setAuthourisedBy(e.target.value)}
                 />
               </div>
             </div>
@@ -310,6 +310,7 @@ const username = localStorage.getItem('username');
 };
 
 export default Expenses;
+
 
 
 
