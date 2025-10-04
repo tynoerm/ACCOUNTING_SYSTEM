@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import axios from 'axios';
-import { Button, Modal } from 'react-bootstrap';
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { Button, Modal } from "react-bootstrap";
 
 const Expenses = () => {
   const [expensesForm, setExpensesForm] = useState([]);
@@ -20,16 +20,16 @@ const Expenses = () => {
   const [authorisedBy, setAuthorisedBy] = useState("");
 
   const [error, setError] = useState("");
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
 
-  const filteredExpenses = expensesForm.filter(q => {
+  const filteredExpenses = expensesForm.filter((q) => {
     const expenseDate = q.date ? new Date(q.date).toISOString().split("T")[0] : "";
     return expenseDate === selectedDate;
   });
 
-  const role = localStorage.getItem('role');
-  const storename = localStorage.getItem('storename');
-  const username = localStorage.getItem('username');
+  const navigate = useNavigate(); // ✅ For back navigation
 
   useEffect(() => {
     axios
@@ -75,7 +75,7 @@ const Expenses = () => {
       paymentMethod,
       expenseType,
       amount,
-      authorisedBy
+      authorisedBy,
     };
 
     axios
@@ -104,9 +104,10 @@ const Expenses = () => {
 
   const handleDownload = async (type) => {
     try {
-      const response = await axios.get(`https://accounting-system-1.onrender.com/expense/download/${type}`, {
-        responseType: "blob",
-      });
+      const response = await axios.get(
+        `https://accounting-system-1.onrender.com/expense/download/${type}`,
+        { responseType: "blob" }
+      );
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
@@ -132,17 +133,32 @@ const Expenses = () => {
         <Button variant="success" onClick={handleShow} className="px-4">
           CREATE AN EXPENSE
         </Button>
+
         <div className="d-flex justify-content-center">
-          <Button variant="primary" onClick={() => handleDownload("pdf")} className="px-4">
+          <Button
+            variant="primary"
+            onClick={() => handleDownload("pdf")}
+            className="px-4"
+          >
             <b>DOWNLOAD PDF</b>
           </Button>
-          <Button variant="success" onClick={() => handleDownload("excel")} className="px-4">
+          <Button
+            variant="success"
+            onClick={() => handleDownload("excel")}
+            className="px-4"
+          >
             DOWNLOAD EXCEL
           </Button>
         </div>
-        <Link to="/" className="btn btn-primary px-4">
+
+        {/* ✅ Back button now goes to previous page */}
+        <Button
+          variant="secondary"
+          className="px-4"
+          onClick={() => navigate(-1)}
+        >
           BACK
-        </Link>
+        </Button>
       </div>
 
       <div className="d-flex justify-content-between align-items-center mb-3">
@@ -172,7 +188,9 @@ const Expenses = () => {
 
             <div className="row mb-3">
               <div className="col-md-6">
-                <label htmlFor="date" className="form-label">Date</label>
+                <label htmlFor="date" className="form-label">
+                  Date
+                </label>
                 <input
                   type="date"
                   className="form-control"
@@ -214,13 +232,16 @@ const Expenses = () => {
                   onChange={(e) => setPaymentMethod(e.target.value)}
                   defaultValue=""
                 >
-                  <option value="" disabled>Choose...</option>
+                  <option value="" disabled>
+                    Choose...
+                  </option>
                   <option>Cash</option>
                   <option>Ecocash</option>
                   <option>Ecocash Zig</option>
                   <option>Zig Swipe</option>
                 </select>
               </div>
+
               <div className="form-group col-md-4" style={{ flex: "1" }}>
                 <label>Type of Expense</label>
                 <select
@@ -230,7 +251,9 @@ const Expenses = () => {
                   onChange={(e) => setExpenseType(e.target.value)}
                   defaultValue=""
                 >
-                  <option value="" disabled>Choose...</option>
+                  <option value="" disabled>
+                    Choose...
+                  </option>
                   <option>food</option>
                   <option>transport fee</option>
                   <option>fuel</option>
@@ -251,7 +274,9 @@ const Expenses = () => {
 
             <div className="row mb-3 mt-3">
               <div className="col-md-6">
-                <label htmlFor="amount" className="form-label">Amount</label>
+                <label htmlFor="amount" className="form-label">
+                  Amount
+                </label>
                 <input
                   type="number"
                   className="form-control"
@@ -261,7 +286,9 @@ const Expenses = () => {
                 />
               </div>
               <div className="col-md-6">
-                <label htmlFor="authorisedBy" className="form-label">Authorised By</label>
+                <label htmlFor="authorisedBy" className="form-label">
+                  Authorised By
+                </label>
                 <input
                   type="text"
                   className="form-control"
