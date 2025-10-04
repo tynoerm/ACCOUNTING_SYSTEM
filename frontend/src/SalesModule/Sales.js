@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const Sales = () => {
@@ -18,6 +18,8 @@ const Sales = () => {
   const [vat, setVat] = useState("");
   const [totalPrice, setTotalPrice] = useState("");
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     const calculateTotalPrice = () => {
       const quantityValue = parseFloat(quantity) || 0;
@@ -33,8 +35,6 @@ const Sales = () => {
 
     calculateTotalPrice();
   }, [quantity, unitPrice, vat]);
-
-  const navigate = useNavigate();
 
   const role = localStorage.getItem("role");
   const storename = localStorage.getItem("storename");
@@ -95,9 +95,10 @@ const Sales = () => {
       </nav>
 
       <div className="d-flex justify-content-end" style={{ padding: 0 }}>
-        <Link to="/salesModuleDashboard" type="button" className="btn btn-primary">
+        {/* ✅ Go to the previous page dynamically */}
+        <button onClick={() => navigate(-1)} className="btn btn-secondary">
           BACK
-        </Link>
+        </button>
       </div>
 
       <div className="card mx-auto shadow-lg" style={{ maxWidth: "90rem", marginTop: "1rem" }}>
