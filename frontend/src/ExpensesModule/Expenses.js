@@ -22,18 +22,14 @@ const Expenses = () => {
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
 
-  // Filter expenses by selectedDate
   const filteredExpenses = expensesForm.filter(q => {
     const expenseDate = q.date ? new Date(q.date).toISOString().split("T")[0] : "";
     return expenseDate === selectedDate;
   });
 
-  
-
-       const role = localStorage.getItem('role');
-const storename = localStorage.getItem('storename');
-const username = localStorage.getItem('username');
-
+  const role = localStorage.getItem('role');
+  const storename = localStorage.getItem('storename');
+  const username = localStorage.getItem('username');
 
   useEffect(() => {
     axios
@@ -87,6 +83,17 @@ const username = localStorage.getItem('username');
       .then((res) => {
         console.log({ status: res.status });
         setExpensesForm((prev) => [...prev, expensesInsert]);
+
+        // ✅ Clear form fields after successful save
+        setDate("");
+        setIssuedTo("");
+        setDescription("");
+        setPaymentMethod("");
+        setExpenseType("");
+        setAmount("");
+        setAuthorisedBy("");
+
+        // ✅ Close modal after saving
         setShow(false);
       })
       .catch((error) => {
@@ -127,7 +134,7 @@ const username = localStorage.getItem('username');
         </Button>
         <div className="d-flex justify-content-center">
           <Button variant="primary" onClick={() => handleDownload("pdf")} className="px-4">
-            <b> DOWNLOAD PDF</b>
+            <b>DOWNLOAD PDF</b>
           </Button>
           <Button variant="success" onClick={() => handleDownload("excel")} className="px-4">
             DOWNLOAD EXCEL
@@ -235,7 +242,7 @@ const username = localStorage.getItem('username');
                   <option>electricity</option>
                   <option>water</option>
                   <option>bike charges</option>
-                    <option>city parking</option>
+                  <option>city parking</option>
                   <option>airtime</option>
                   <option>shop expenses</option>
                 </select>
@@ -310,11 +317,3 @@ const username = localStorage.getItem('username');
 };
 
 export default Expenses;
-
-
-
-
-
-
-
-
