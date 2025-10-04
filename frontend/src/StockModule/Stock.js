@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from 'axios';
-import { Button, Modal, InputGroup, Form } from 'react-bootstrap';
-
-
+import { Button, Modal } from 'react-bootstrap';
 
 const Stock = () => {
-
   const [stockForm, setStockForm] = useState([]);
-  const [stockInsert, setStockInsert] = useState({});
 
   const [date, setDate] = useState("");
   const [supplierName, setSupplierName] = useState("");
@@ -19,26 +15,24 @@ const Stock = () => {
   const [sellingPrice, setSellingPrice] = useState("");
   const [receivedBy, setReceivedBy] = useState("");
 
-  const [show, setShow] = useState(false)
+  const [show, setShow] = useState(false);
   const handleShow = () => setShow(true);
   const handleClose = () => setShow(false);
 
-  const [error, setError] = useState("")
+  const [error, setError] = useState("");
 
+  const role = localStorage.getItem("role");
+  const storename = localStorage.getItem("storename");
+  const username = localStorage.getItem("username");
 
-       const role = localStorage.getItem('role');
-const storename = localStorage.getItem('storename');
-const username = localStorage.getItem('username');
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
 
-
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
-
-
-  const filteredStock = stockForm.filter(q => {
+  const filteredStock = stockForm.filter((q) => {
     const stockDate = q.date ? new Date(q.date).toISOString().split("T")[0] : "";
     return stockDate === selectedDate;
   });
-
 
   useEffect(() => {
     axios
@@ -51,37 +45,50 @@ const username = localStorage.getItem('username');
       });
   }, []);
 
-
-
-
-
-
-
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!date || !supplierName || !stockDescription || !stockQuantity || !transportCost || !buyingPrice || !sellingPrice || !receivedBy) {
+    if (
+      !date ||
+      !supplierName ||
+      !stockDescription ||
+      !stockQuantity ||
+      !transportCost ||
+      !buyingPrice ||
+      !sellingPrice ||
+      !receivedBy
+    ) {
       setError("All fields are required");
       return;
     }
+
     const stringPattern = /^[A-Za-z\s.,!?]+$/;
-    if (!stringPattern.test(supplierName) || !stringPattern.test(stockDescription) || !stringPattern.test(receivedBy)) {
-      setError("Issued To and Authorised By should only contain letters and spaces.");
+    if (
+      !stringPattern.test(supplierName) ||
+      !stringPattern.test(stockDescription) ||
+      !stringPattern.test(receivedBy)
+    ) {
+      setError("Supplier Name, Description, and Received By should contain only letters and spaces.");
       return;
     }
 
     if (
-      isNaN(stockQuantity) || stockQuantity <= 0 ||
-      isNaN(transportCost) || transportCost < 0 ||
-      isNaN(buyingPrice) || buyingPrice <= 0 ||
-      isNaN(sellingPrice) || sellingPrice <= 0
+      isNaN(stockQuantity) ||
+      stockQuantity <= 0 ||
+      isNaN(transportCost) ||
+      transportCost < 0 ||
+      isNaN(buyingPrice) ||
+      buyingPrice <= 0 ||
+      isNaN(sellingPrice) ||
+      sellingPrice <= 0
     ) {
-      setError("Stock Quantity, Buying Price, and Selling Price should be positive. Transport Cost cannot be negative.");
+      setError(
+        "Stock Quantity, Buying Price, and Selling Price should be positive. Transport Cost cannot be negative."
+      );
       return;
     }
 
     setError("");
-
 
     const stockInsert = {
       date,
@@ -91,24 +98,40 @@ const username = localStorage.getItem('username');
       transportCost,
       buyingPrice,
       sellingPrice,
-      
       receivedBy,
     };
+
     axios
-      .post("https://accounting-system-1.onrender.com/stock/create-stock", stockInsert)
+      .post(
+        "https://accounting-system-1.onrender.com/stock/create-stock",
+        stockInsert
+      )
       .then((res) => {
         console.log({ status: res.status });
-        setStockForm(prev => [...prev, stockInsert])
-      });
-    setShow(false)
-  }
+        setStockForm((prev) => [...prev, stockInsert]);
 
+        // ✅ Clear all form fields for new entry
+        setDate("");
+        setSupplierName("");
+        setStockDescription("");
+        setStockQuantity("");
+        setTransportCost("");
+        setBuyingPrice("");
+        setSellingPrice("");
+        setReceivedBy("");
+      })
+      .catch((error) => {
+        console.error(error);
+        setError("An error occurred while saving the batch.");
+      });
+  };
 
   const handleDownload = async (type) => {
     try {
-      const response = await axios.get(`https://accounting-system-1.onrender.com/stock/download/${type}`, {
-        responseType: "blob", // Important for file download
-      });
+      const response = await axios.get(
+        `https://accounting-system-1.onrender.com/stock/download/${type}`,
+        { responseType: "blob" }
+      );
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
@@ -122,30 +145,34 @@ const username = localStorage.getItem('username');
     }
   };
 
-
   return (
-    <div >
+    <div>
       <nav className="navbar navbar-dark bg-dark border-bottom border-light py-3">
         <a className="navbar-brand text-white" href="#">
           <b>STOCK MODULE</b>
         </a>
       </nav>
 
-
       <div className="d-flex justify-content-between my-4">
         <Button variant="success" onClick={handleShow} className="px-4">
           CREATE STOCK BATCH
         </Button>
         <div className="d-flex justify-content-end">
-
           <Button
-            variant="primary" onClick={() => handleDownload("pdf")} className="px-4"> DOWNLOAD PDF
+            variant="primary"
+            onClick={() => handleDownload("pdf")}
+            className="px-4"
+          >
+            DOWNLOAD PDF
           </Button>
           <Button
-            variant="success" onClick={() => handleDownload("excel")} className="px-4"> DOWNLOAD EXCEL
+            variant="success"
+            onClick={() => handleDownload("excel")}
+            className="px-4"
+          >
+            DOWNLOAD EXCEL
           </Button>
         </div>
-
         <Link to="/" className="btn btn-primary px-4">
           BACK
         </Link>
@@ -153,12 +180,13 @@ const username = localStorage.getItem('username');
 
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2 className="text-secondary">Stocks for {selectedDate}</h2>
-        <input type="date" className="form-control w-auto" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+        <input
+          type="date"
+          className="form-control w-auto"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+        />
       </div>
-
-
-
-
 
       <Modal
         show={show}
@@ -174,10 +202,12 @@ const username = localStorage.getItem('username');
         <Modal.Body>
           <form onSubmit={handleSubmit}>
             {error && <div className="alert alert-danger">{error}</div>}
-            {/* Form Fields */}
+
             <div className="row mb-3">
               <div className="col-md-6">
-                <label htmlFor="date" className="form-label">Date</label>
+                <label htmlFor="date" className="form-label">
+                  Date
+                </label>
                 <input
                   type="date"
                   className="form-control"
@@ -198,7 +228,6 @@ const username = localStorage.getItem('username');
               </div>
             </div>
 
-            {/* Customer Information */}
             <div className="row mb-3">
               <div className="col-md-6">
                 <label className="form-label">Received By</label>
@@ -206,12 +235,15 @@ const username = localStorage.getItem('username');
                   type="text"
                   className="form-control"
                   id="receivedBy"
-                  value={username}
+                  value={receivedBy}
+                  placeholder={username || "Enter name"}
                   onChange={(e) => setReceivedBy(e.target.value)}
                 />
               </div>
               <div className="col-md-6">
-                <label htmlFor="itemDescription" className="form-label">Stock Description</label>
+                <label htmlFor="stockDescription" className="form-label">
+                  Stock Description
+                </label>
                 <textarea
                   type="text"
                   className="form-control"
@@ -222,12 +254,9 @@ const username = localStorage.getItem('username');
               </div>
             </div>
 
-
-
-            {/* Quantity, Unit Price, and VAT */}
             <div className="row mb-3">
               <div className="col-md-6">
-                <label className="form-label"> Stock Quantity</label>
+                <label className="form-label">Stock Quantity</label>
                 <input
                   type="number"
                   className="form-control"
@@ -260,7 +289,9 @@ const username = localStorage.getItem('username');
                 />
               </div>
               <div className="col-md-6">
-                <label htmlFor="totalPrice" className="form-label">Selling Price</label>
+                <label htmlFor="sellingPrice" className="form-label">
+                  Selling Price
+                </label>
                 <input
                   type="number"
                   className="form-control"
@@ -271,16 +302,15 @@ const username = localStorage.getItem('username');
               </div>
             </div>
 
-            {/* Submit Button */}
-            <Button variant="primary" type="submit" className="w-100 mt-4">SAVE A BATCH</Button>
+            <Button variant="primary" type="submit" className="w-100 mt-4">
+              SAVE & ADD NEXT
+            </Button>
           </form>
         </Modal.Body>
       </Modal>
 
-
-
       <table className="table table-striped table-bordered">
-      <thead className="table-dark">
+        <thead className="table-dark">
           <tr>
             <th>Date:</th>
             <th>Supplier Name:</th>
@@ -288,7 +318,6 @@ const username = localStorage.getItem('username');
             <th>Quantity:</th>
             <th>Buying Price:</th>
             <th>Selling Price:</th>
-          
             <th>Received By:</th>
           </tr>
         </thead>
@@ -301,24 +330,20 @@ const username = localStorage.getItem('username');
                 <td>{stock.supplierName || "N/A"}</td>
                 <td>{stock.stockDescription || "N/A"}</td>
                 <td>{stock.stockQuantity || "N/A"}</td>
-                <td>{stock.buyingPrice || "N/A"}</td> {/* Fixed Buying Price */}
+                <td>{stock.buyingPrice || "N/A"}</td>
                 <td>{stock.sellingPrice || "N/A"}</td>
-              
                 <td>{stock.receivedBy || "N/A"}</td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="8">No stock found for the selected date</td> {/* Fixed colSpan to match column count */}
+              <td colSpan="7">No stock found for the selected date</td>
             </tr>
           )}
         </tbody>
       </table>
-
-
     </div>
-  )
-}
-
+  );
+};
 
 export default Stock;
