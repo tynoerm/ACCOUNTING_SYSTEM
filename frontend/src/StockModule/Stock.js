@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import axios from 'axios';
-import { Button, Modal } from 'react-bootstrap';
+import { useNavigate } from "react-router-dom"; // ✅ useNavigate instead of Link
+import axios from "axios";
+import { Button, Modal } from "react-bootstrap";
 
 const Stock = () => {
   const [stockForm, setStockForm] = useState([]);
@@ -33,6 +33,8 @@ const Stock = () => {
     const stockDate = q.date ? new Date(q.date).toISOString().split("T")[0] : "";
     return stockDate === selectedDate;
   });
+
+  const navigate = useNavigate(); // ✅ for BACK button navigation
 
   useEffect(() => {
     axios
@@ -102,15 +104,12 @@ const Stock = () => {
     };
 
     axios
-      .post(
-        "https://accounting-system-1.onrender.com/stock/create-stock",
-        stockInsert
-      )
+      .post("https://accounting-system-1.onrender.com/stock/create-stock", stockInsert)
       .then((res) => {
         console.log({ status: res.status });
         setStockForm((prev) => [...prev, stockInsert]);
 
-        // ✅ Clear all form fields for new entry
+        // ✅ Clear all form fields after submission
         setDate("");
         setSupplierName("");
         setStockDescription("");
@@ -157,6 +156,7 @@ const Stock = () => {
         <Button variant="success" onClick={handleShow} className="px-4">
           CREATE STOCK BATCH
         </Button>
+
         <div className="d-flex justify-content-end">
           <Button
             variant="primary"
@@ -173,9 +173,15 @@ const Stock = () => {
             DOWNLOAD EXCEL
           </Button>
         </div>
-        <Link to="/" className="btn btn-primary px-4">
+
+        {/* ✅ Updated BACK button using navigate(-1) */}
+        <Button
+          variant="secondary"
+          className="px-4"
+          onClick={() => navigate(-1)}
+        >
           BACK
-        </Link>
+        </Button>
       </div>
 
       <div className="d-flex justify-content-between align-items-center mb-3">
