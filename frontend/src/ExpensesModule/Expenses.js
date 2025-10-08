@@ -36,7 +36,6 @@ const Expenses = () => {
   const [show, setShow] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [downloadDate, setDownloadDate] = useState("");
-
   const [date, setDate] = useState("");
   const [issuedTo, setIssuedTo] = useState("");
   const [description, setDescription] = useState("");
@@ -44,14 +43,13 @@ const Expenses = () => {
   const [expenseType, setExpenseType] = useState("");
   const [amount, setAmount] = useState("");
   const [authorisedBy, setAuthorisedBy] = useState("");
-
   const [error, setError] = useState("");
   const [notification, setNotification] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
 
   const navigate = useNavigate();
+
+  const userRole = localStorage.getItem("role"); // "admin" or "user"
 
   // Fetch expenses
   useEffect(() => {
@@ -68,7 +66,6 @@ const Expenses = () => {
 
   const handleShow = () => setShow(true);
   const handleClose = () => setShow(false);
-
   const handleDownloadShow = () => {
     setDownloadDate(selectedDate || new Date().toISOString().split("T")[0]);
     setShowDownloadModal(true);
@@ -82,7 +79,6 @@ const Expenses = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validation
     if (!date || !issuedTo || !description || !paymentMethod || !expenseType || !authorisedBy) {
       showNotification("All fields are required.", "error");
       return;
@@ -104,7 +100,6 @@ const Expenses = () => {
       return;
     }
 
-    // Duplicate check
     const isDuplicate = expensesForm.some(
       (exp) =>
         exp.date === date &&
@@ -123,7 +118,7 @@ const Expenses = () => {
     axios
       .post("https://accounting-system-1.onrender.com/expense/create-expense", expensesInsert)
       .then((res) => {
-        setExpensesForm((prev) => [...prev, expensesInsert]);
+        setExpensesForm((prev) => [...prev, { ...expensesInsert, _id: res.data.data._id }]);
         setDate(""); setIssuedTo(""); setDescription(""); setPaymentMethod(""); setExpenseType(""); setAmount(""); setAuthorisedBy("");
         setShow(false);
         showNotification("Expense saved successfully!");
@@ -132,6 +127,19 @@ const Expenses = () => {
         console.error(err);
         showNotification("An error occurred while submitting the expense.", "error");
       });
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this expense?")) return;
+
+    try {
+      await axios.delete(`https://accounting-system-1.onrender.com/expense/${id}`);
+      setExpensesForm((prev) => prev.filter((expense) => expense._id !== id));
+      showNotification("Expense deleted successfully!");
+    } catch (err) {
+      console.error(err);
+      showNotification("Failed to delete expense.", "error");
+    }
   };
 
   const handleExcelDownload = async () => {
@@ -162,11 +170,7 @@ const Expenses = () => {
   return (
     <div>
       {notification && (
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          onClose={() => setNotification(null)}
-        />
+        <Notification message={notification.message} type={notification.type} onClose={() => setNotification(null)} />
       )}
 
       <nav className="navbar navbar-dark bg-dark border-bottom border-light py-3">
@@ -185,17 +189,16 @@ const Expenses = () => {
       </div>
 
       {/* Create Expense Modal */}
-      <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false} size="xl" aria-labelledby="expenses-form">
+      <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false} size="xl">
         <Modal.Header closeButton>
           <Modal.Title>Create an Expense</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <form onSubmit={handleSubmit}>
             {error && <div className="alert alert-danger">{error}</div>}
-
             <div className="row mb-3">
               <div className="col-md-6">
-                <label htmlFor="date" className="form-label">Date</label>
+                <label className="form-label">Date</label>
                 <input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
               <div className="col-md-6">
@@ -211,7 +214,7 @@ const Expenses = () => {
 
             <div style={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
               <div className="form-group col-md-4" style={{ flex: "1" }}>
-                <label htmlFor="paymentMethod">Payment Option</label>
+                <label>Payment Option</label>
                 <select className="form-control" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
                   <option value="" disabled>Choose...</option>
                   <option>Cash</option>
@@ -220,7 +223,6 @@ const Expenses = () => {
                   <option>Zig Swipe</option>
                 </select>
               </div>
-
               <div className="form-group col-md-4" style={{ flex: "1" }}>
                 <label>Type of Expense</label>
                 <select className="form-control" value={expenseType} onChange={(e) => setExpenseType(e.target.value)}>
@@ -245,11 +247,11 @@ const Expenses = () => {
 
             <div className="row mb-3 mt-3">
               <div className="col-md-6">
-                <label htmlFor="amount" className="form-label">Amount</label>
+                <label className="form-label">Amount</label>
                 <input type="number" className="form-control" value={amount} onChange={(e) => setAmount(e.target.value)} />
               </div>
               <div className="col-md-6">
-                <label htmlFor="authorisedBy" className="form-label">Authorised By</label>
+                <label className="form-label">Authorised By</label>
                 <input type="text" className="form-control" value={authorisedBy} onChange={(e) => setAuthorisedBy(e.target.value)} />
               </div>
             </div>
@@ -273,7 +275,7 @@ const Expenses = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Table */}
+      {/* Expenses Table */}
       <table className="table table-striped table-bordered">
         <thead className="table-dark">
           <tr>
@@ -284,12 +286,13 @@ const Expenses = () => {
             <th>Expense Type</th>
             <th>Amount</th>
             <th>Authorised By</th>
+            {userRole === "admin" && <th>Actions</th>}
           </tr>
         </thead>
         <tbody>
           {filteredExpenses.length > 0 ? (
-            filteredExpenses.map((expense, index) => (
-              <tr key={index}>
+            filteredExpenses.map((expense) => (
+              <tr key={expense._id}>
                 <td>{expense.date ? expense.date.split("T")[0] : "N/A"}</td>
                 <td>{expense.issuedTo || "N/A"}</td>
                 <td>{expense.description || "N/A"}</td>
@@ -297,11 +300,16 @@ const Expenses = () => {
                 <td>{expense.expenseType || "N/A"}</td>
                 <td>{expense.amount !== undefined ? expense.amount : "N/A"}</td>
                 <td>{expense.authorisedBy || "N/A"}</td>
+                {userRole === "admin" && (
+                  <td>
+                    <Button variant="danger" size="sm" onClick={() => handleDelete(expense._id)}>Delete</Button>
+                  </td>
+                )}
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="7">No expense is found per selected date</td>
+              <td colSpan={userRole === "admin" ? 8 : 7}>No expense is found per selected date</td>
             </tr>
           )}
         </tbody>
