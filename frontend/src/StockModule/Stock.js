@@ -2,10 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Button, Modal } from "react-bootstrap";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const Stock = () => {
   const [stockForm, setStockForm] = useState([]);
-  const [date, setDate] = useState("");
+
+  const [date, setDate] = useState(new Date());
   const [supplierName, setSupplierName] = useState("");
   const [stockDescription, setStockDescription] = useState("");
   const [stockQuantity, setStockQuantity] = useState("");
@@ -13,40 +16,50 @@ const Stock = () => {
   const [buyingPrice, setBuyingPrice] = useState("");
   const [sellingPrice, setSellingPrice] = useState("");
   const [receivedBy, setReceivedBy] = useState("");
-  const [show, setShow] = useState(false);
   const [error, setError] = useState("");
+
+  const [show, setShow] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // 🆕 Download modal states
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [downloadDate, setDownloadDate] = useState(new Date());
 
   const role = localStorage.getItem("role");
   const storename = localStorage.getItem("storename");
   const username = localStorage.getItem("username");
 
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-
-  const filteredStock = stockForm.filter((q) => {
-    const stockDate = q.date ? new Date(q.date).toISOString().split("T")[0] : "";
-    return stockDate === selectedDate;
-  });
-
   const navigate = useNavigate();
 
+  // ✅ Load stock data
   useEffect(() => {
     axios
       .get("https://accounting-system-1.onrender.com/stock/")
-      .then((res) => {
-        setStockForm(res.data.data);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+      .then((res) => setStockForm(res.data.data))
+      .catch((error) => console.log(error));
   }, []);
+
+  // Filter by selected date
+  const filteredStock = stockForm.filter((q) => {
+    const stockDate = q.date ? new Date(q.date).toISOString().split("T")[0] : "";
+    const selectedString = selectedDate.toISOString().split("T")[0];
+    return stockDate === selectedString;
+  });
 
   const handleShow = () => setShow(true);
   const handleClose = () => setShow(false);
 
+  const handleDownloadShow = () => {
+    setDownloadDate(selectedDate || new Date());
+    setShowDownloadModal(true);
+  };
+
+  const handleDownloadClose = () => setShowDownloadModal(false);
+
+  // 🟢 Save Stock
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (
       !date ||
       !supplierName ||
@@ -92,7 +105,7 @@ const Stock = () => {
     setError("");
 
     const stockInsert = {
-      date,
+      date: date.toISOString().split("T")[0],
       supplierName,
       stockDescription,
       stockQuantity,
@@ -103,13 +116,10 @@ const Stock = () => {
     };
 
     axios
-      .post(
-        "https://accounting-system-1.onrender.com/stock/create-stock",
-        stockInsert
-      )
-      .then((res) => {
+      .post("https://accounting-system-1.onrender.com/stock/create-stock", stockInsert)
+      .then(() => {
         setStockForm((prev) => [...prev, stockInsert]);
-        setDate("");
+        setDate(new Date());
         setSupplierName("");
         setStockDescription("");
         setStockQuantity("");
@@ -117,6 +127,7 @@ const Stock = () => {
         setBuyingPrice("");
         setSellingPrice("");
         setReceivedBy("");
+        setShow(false);
       })
       .catch((error) => {
         console.error(error);
@@ -124,28 +135,32 @@ const Stock = () => {
       });
   };
 
-  // 📥 Download Excel by Date
+  // 🟡 Excel Download
   const handleExcelDownload = async () => {
-    if (!selectedDate) {
+    if (!downloadDate) {
       alert("Please select a date first.");
       return;
     }
 
     try {
+      const dateString = downloadDate.toISOString().split("T")[0];
       const response = await axios.get(
-        `https://accounting-system-1.onrender.com/stock/download/excel?date=${selectedDate}`,
+        `https://accounting-system-1.onrender.com/stock/download/excel?date=${dateString}`,
         { responseType: "blob" }
       );
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `stock_${selectedDate}.xlsx`);
+      link.setAttribute("download", `stocks_${dateString}.xlsx`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      handleDownloadClose();
     } catch (error) {
-      console.error("Error downloading Excel file:", error);
+      console.error("Error downloading file:", error);
+      alert("Error downloading Excel. Check console for details.");
     }
   };
 
@@ -153,25 +168,22 @@ const Stock = () => {
     <div>
       <nav className="navbar navbar-dark bg-dark border-bottom border-light py-3">
         <a className="navbar-brand text-white" href="#">
-          <b>STOCK MODULE</b>
+          <b>STOCK MANAGEMENT</b>
         </a>
       </nav>
 
       <div className="d-flex justify-content-between my-4">
         <Button variant="success" onClick={handleShow} className="px-4">
-          CREATE STOCK BATCH
+          ADD STOCK
         </Button>
 
-        <div className="d-flex justify-content-end">
-          {/* 🟢 Only Excel download remains */}
-          <Button
-            variant="success"
-            onClick={handleExcelDownload}
-            className="px-4"
-          >
-            DOWNLOAD EXCEL BY DATE
-          </Button>
-        </div>
+        <Button
+          variant="success"
+          onClick={handleDownloadShow}
+          className="px-4"
+        >
+          DOWNLOAD EXCEL
+        </Button>
 
         <Button
           variant="secondary"
@@ -183,25 +195,21 @@ const Stock = () => {
       </div>
 
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2 className="text-secondary">Stocks for {selectedDate}</h2>
-        <input
-          type="date"
+        <h2 className="text-secondary">
+          Stock for {selectedDate.toISOString().split("T")[0]}
+        </h2>
+        <DatePicker
+          selected={selectedDate}
+          onChange={(date) => setSelectedDate(date)}
           className="form-control w-auto"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
+          dateFormat="yyyy-MM-dd"
         />
       </div>
 
-      {/* Create Stock Modal */}
-      <Modal
-        show={show}
-        onHide={handleClose}
-        backdrop="static"
-        keyboard={false}
-        size="xl"
-      >
+      {/* Stock Add Modal */}
+      <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false} size="xl">
         <Modal.Header closeButton>
-          <Modal.Title>Create a Batch</Modal.Title>
+          <Modal.Title>Add Stock</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <form onSubmit={handleSubmit}>
@@ -209,15 +217,12 @@ const Stock = () => {
 
             <div className="row mb-3">
               <div className="col-md-6">
-                <label htmlFor="date" className="form-label">
-                  Date
-                </label>
-                <input
-                  type="date"
+                <label className="form-label">Date</label>
+                <DatePicker
+                  selected={date}
+                  onChange={(d) => setDate(d)}
                   className="form-control"
-                  id="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  dateFormat="yyyy-MM-dd"
                 />
               </div>
               <div className="col-md-6">
@@ -225,123 +230,136 @@ const Stock = () => {
                 <input
                   type="text"
                   className="form-control"
-                  id="supplierName"
                   value={supplierName}
                   onChange={(e) => setSupplierName(e.target.value)}
                 />
               </div>
             </div>
 
+            <div className="mb-3">
+              <label className="form-label">Stock Description</label>
+              <input
+                type="text"
+                className="form-control"
+                value={stockDescription}
+                onChange={(e) => setStockDescription(e.target.value)}
+              />
+            </div>
+
             <div className="row mb-3">
+              <div className="col-md-4">
+                <label className="form-label">Stock Quantity</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={stockQuantity}
+                  onChange={(e) => setStockQuantity(e.target.value)}
+                />
+              </div>
+              <div className="col-md-4">
+                <label className="form-label">Transport Cost</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={transportCost}
+                  onChange={(e) => setTransportCost(e.target.value)}
+                />
+              </div>
+              <div className="col-md-4">
+                <label className="form-label">Buying Price</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={buyingPrice}
+                  onChange={(e) => setBuyingPrice(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="row mb-3">
+              <div className="col-md-6">
+                <label className="form-label">Selling Price</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={sellingPrice}
+                  onChange={(e) => setSellingPrice(e.target.value)}
+                />
+              </div>
               <div className="col-md-6">
                 <label className="form-label">Received By</label>
                 <input
                   type="text"
                   className="form-control"
-                  id="receivedBy"
                   value={receivedBy}
-                  placeholder={username || "Enter name"}
                   onChange={(e) => setReceivedBy(e.target.value)}
-                />
-              </div>
-              <div className="col-md-6">
-                <label htmlFor="stockDescription" className="form-label">
-                  Stock Description
-                </label>
-                <textarea
-                  type="text"
-                  className="form-control"
-                  id="stockDescription"
-                  value={stockDescription}
-                  onChange={(e) => setStockDescription(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="row mb-3">
-              <div className="col-md-6">
-                <label className="form-label">Stock Quantity</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  id="stockQuantity"
-                  value={stockQuantity}
-                  onChange={(e) => setStockQuantity(e.target.value)}
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label">Transport Cost</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  id="transportCost"
-                  value={transportCost}
-                  onChange={(e) => setTransportCost(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="row mb-3">
-              <div className="col-md-6">
-                <label className="form-label">Buying Price</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  id="buyingPrice"
-                  value={buyingPrice}
-                  onChange={(e) => setBuyingPrice(e.target.value)}
-                />
-              </div>
-              <div className="col-md-6">
-                <label htmlFor="sellingPrice" className="form-label">
-                  Selling Price
-                </label>
-                <input
-                  type="number"
-                  className="form-control"
-                  id="sellingPrice"
-                  value={sellingPrice}
-                  onChange={(e) => setSellingPrice(e.target.value)}
                 />
               </div>
             </div>
 
             <Button variant="primary" type="submit" className="w-100 mt-4">
-              SAVE & ADD NEXT
+              FINALIZE STOCK
             </Button>
           </form>
         </Modal.Body>
       </Modal>
 
+      {/* 🆕 Download Date Modal */}
+      <Modal show={showDownloadModal} onHide={handleDownloadClose} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Select date to download</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <DatePicker
+            selected={downloadDate}
+            onChange={(date) => setDownloadDate(date)}
+            className="form-control"
+            dateFormat="yyyy-MM-dd"
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleDownloadClose}>
+            Cancel
+          </Button>
+          <Button variant="success" onClick={handleExcelDownload}>
+            Download Excel
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Table */}
       <table className="table table-striped table-bordered">
         <thead className="table-dark">
           <tr>
-            <th>Date:</th>
-            <th>Supplier Name:</th>
-            <th>Description:</th>
-            <th>Quantity:</th>
-            <th>Buying Price:</th>
-            <th>Selling Price:</th>
-            <th>Received By:</th>
+            <th>Date</th>
+            <th>Supplier Name</th>
+            <th>Description</th>
+            <th>Quantity</th>
+            <th>Transport Cost</th>
+            <th>Buying Price</th>
+            <th>Selling Price</th>
+            <th>Received By</th>
           </tr>
         </thead>
-
         <tbody>
-          {Array.isArray(filteredStock) && filteredStock.length > 0 ? (
+          {filteredStock.length > 0 ? (
             filteredStock.map((stock, index) => (
               <tr key={index}>
                 <td>{stock.date ? stock.date.split("T")[0] : "N/A"}</td>
                 <td>{stock.supplierName || "N/A"}</td>
                 <td>{stock.stockDescription || "N/A"}</td>
                 <td>{stock.stockQuantity || "N/A"}</td>
-                <td>{stock.buyingPrice || "N/A"}</td>
-                <td>{stock.sellingPrice || "N/A"}</td>
+                <td>{stock.transportCost || "0.00"}</td>
+                <td>{stock.buyingPrice || "0.00"}</td>
+                <td>{stock.sellingPrice || "0.00"}</td>
                 <td>{stock.receivedBy || "N/A"}</td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="7">No stock found for the selected date</td>
+              <td colSpan="8" className="text-center">
+                No stock records found for this date.
+              </td>
             </tr>
           )}
         </tbody>
