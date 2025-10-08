@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ useNavigate instead of Link
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Button, Modal } from "react-bootstrap";
 
 const Stock = () => {
   const [stockForm, setStockForm] = useState([]);
-
   const [date, setDate] = useState("");
   const [supplierName, setSupplierName] = useState("");
   const [stockDescription, setStockDescription] = useState("");
@@ -14,11 +13,7 @@ const Stock = () => {
   const [buyingPrice, setBuyingPrice] = useState("");
   const [sellingPrice, setSellingPrice] = useState("");
   const [receivedBy, setReceivedBy] = useState("");
-
   const [show, setShow] = useState(false);
-  const handleShow = () => setShow(true);
-  const handleClose = () => setShow(false);
-
   const [error, setError] = useState("");
 
   const role = localStorage.getItem("role");
@@ -34,7 +29,7 @@ const Stock = () => {
     return stockDate === selectedDate;
   });
 
-  const navigate = useNavigate(); // ✅ for BACK button navigation
+  const navigate = useNavigate();
 
   useEffect(() => {
     axios
@@ -47,9 +42,11 @@ const Stock = () => {
       });
   }, []);
 
+  const handleShow = () => setShow(true);
+  const handleClose = () => setShow(false);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-
     if (
       !date ||
       !supplierName ||
@@ -70,7 +67,9 @@ const Stock = () => {
       !stringPattern.test(stockDescription) ||
       !stringPattern.test(receivedBy)
     ) {
-      setError("Supplier Name, Description, and Received By should contain only letters and spaces.");
+      setError(
+        "Supplier Name, Description, and Received By should contain only letters and spaces."
+      );
       return;
     }
 
@@ -104,12 +103,12 @@ const Stock = () => {
     };
 
     axios
-      .post("https://accounting-system-1.onrender.com/stock/create-stock", stockInsert)
+      .post(
+        "https://accounting-system-1.onrender.com/stock/create-stock",
+        stockInsert
+      )
       .then((res) => {
-        console.log({ status: res.status });
         setStockForm((prev) => [...prev, stockInsert]);
-
-        // ✅ Clear all form fields after submission
         setDate("");
         setSupplierName("");
         setStockDescription("");
@@ -125,22 +124,28 @@ const Stock = () => {
       });
   };
 
-  const handleDownload = async (type) => {
+  // 📥 Download Excel by Date
+  const handleExcelDownload = async () => {
+    if (!selectedDate) {
+      alert("Please select a date first.");
+      return;
+    }
+
     try {
       const response = await axios.get(
-        `https://accounting-system-1.onrender.com/stock/download/${type}`,
+        `https://accounting-system-1.onrender.com/stock/download/excel?date=${selectedDate}`,
         { responseType: "blob" }
       );
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `file.${type}`);
+      link.setAttribute("download", `stock_${selectedDate}.xlsx`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error("Error downloading file:", error);
+      console.error("Error downloading Excel file:", error);
     }
   };
 
@@ -158,23 +163,16 @@ const Stock = () => {
         </Button>
 
         <div className="d-flex justify-content-end">
-          <Button
-            variant="primary"
-            onClick={() => handleDownload("pdf")}
-            className="px-4"
-          >
-            DOWNLOAD PDF
-          </Button>
+          {/* 🟢 Only Excel download remains */}
           <Button
             variant="success"
-            onClick={() => handleDownload("excel")}
+            onClick={handleExcelDownload}
             className="px-4"
           >
-            DOWNLOAD EXCEL
+            DOWNLOAD EXCEL BY DATE
           </Button>
         </div>
 
-        {/* ✅ Updated BACK button using navigate(-1) */}
         <Button
           variant="secondary"
           className="px-4"
@@ -194,13 +192,13 @@ const Stock = () => {
         />
       </div>
 
+      {/* Create Stock Modal */}
       <Modal
         show={show}
         onHide={handleClose}
         backdrop="static"
         keyboard={false}
         size="xl"
-        aria-labelledby="stockbatch-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Create a Batch</Modal.Title>
