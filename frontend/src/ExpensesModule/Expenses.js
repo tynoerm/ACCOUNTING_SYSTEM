@@ -7,10 +7,21 @@ const Expenses = () => {
   const [expensesForm, setExpensesForm] = useState([]);
   const [show, setShow] = useState(false);
 
+  // NEW: download modal
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [downloadDate, setDownloadDate] = useState("");
+
   const handleShow = () => setShow(true);
   const handleClose = () => setShow(false);
 
-  // Form state
+  const handleDownloadShow = () => {
+    // default download date to currently selected date or today
+    setDownloadDate(selectedDate || new Date().toISOString().split("T")[0]);
+    setShowDownloadModal(true);
+  };
+  const handleDownloadClose = () => setShowDownloadModal(false);
+
+  // Form state (kept exactly as you had it)
   const [date, setDate] = useState("");
   const [issuedTo, setIssuedTo] = useState("");
   const [description, setDescription] = useState("");
@@ -84,7 +95,7 @@ const Expenses = () => {
         console.log({ status: res.status });
         setExpensesForm((prev) => [...prev, expensesInsert]);
 
-        // ✅ Clear form fields after successful save
+        // Clear form fields after successful save
         setDate("");
         setIssuedTo("");
         setDescription("");
@@ -93,7 +104,7 @@ const Expenses = () => {
         setAmount("");
         setAuthorisedBy("");
 
-        // ✅ Close modal after saving
+        // Close modal after saving
         setShow(false);
       })
       .catch((error) => {
@@ -102,6 +113,35 @@ const Expenses = () => {
       });
   };
 
+  // NEW: downloads filtered Excel for provided date
+  const handleExcelDownload = async () => {
+    if (!downloadDate) {
+      alert("Please select a date to download.");
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `https://accounting-system-1.onrender.com/expense/download/excel?date=${downloadDate}`,
+        { responseType: "blob" }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `expenses_${downloadDate}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      handleDownloadClose();
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      alert("Error downloading Excel. Check console for details.");
+    }
+  };
+
+  // Keep original handleDownload in case you want to call it elsewhere (unused for pdf button removal)
   const handleDownload = async (type) => {
     try {
       const response = await axios.get(
@@ -135,23 +175,17 @@ const Expenses = () => {
         </Button>
 
         <div className="d-flex justify-content-center">
-          <Button
-            variant="primary"
-            onClick={() => handleDownload("pdf")}
-            className="px-4"
-          >
-            <b>DOWNLOAD PDF</b>
-          </Button>
+          {/* PDF button removed from UI as requested; backend PDF route remains untouched */}
           <Button
             variant="success"
-            onClick={() => handleDownload("excel")}
+            onClick={handleDownloadShow}
             className="px-4"
           >
             DOWNLOAD EXCEL
           </Button>
         </div>
 
-        {/* ✅ Back button now goes to previous page */}
+        {/* Back button unchanged */}
         <Button
           variant="secondary"
           className="px-4"
@@ -304,6 +338,25 @@ const Expenses = () => {
             </Button>
           </form>
         </Modal.Body>
+      </Modal>
+
+      {/* NEW: Download date selection modal */}
+      <Modal show={showDownloadModal} onHide={handleDownloadClose} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Select date to download</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <input
+            type="date"
+            className="form-control"
+            value={downloadDate}
+            onChange={(e) => setDownloadDate(e.target.value)}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleDownloadClose}>Cancel</Button>
+          <Button variant="success" onClick={handleExcelDownload}>Download Excel</Button>
+        </Modal.Footer>
       </Modal>
 
       <table className="table table-striped table-bordered">
