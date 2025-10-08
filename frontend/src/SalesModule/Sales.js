@@ -2,12 +2,35 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
+// Toast notification component
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3000); // Auto-close after 3s
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: "20px",
+        right: "20px",
+        backgroundColor: type === "error" ? "#f8d7da" : "#d1e7dd",
+        color: type === "error" ? "#842029" : "#0f5132",
+        padding: "15px 25px",
+        borderRadius: "8px",
+        boxShadow: "0px 0px 10px rgba(0,0,0,0.3)",
+        zIndex: 9999,
+      }}
+    >
+      {message}
+    </div>
+  );
+};
+
 const Sales = () => {
   const [salesForm, setSalesForm] = useState([]);
-  const [salesInsert, setSalesInsert] = useState({});
-
   const [date, setDate] = useState("");
-  const [cashierName, setCashierName] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [itemDescription, setItemDescription] = useState("");
   const [currency, setCurrency] = useState("");
@@ -18,53 +41,80 @@ const Sales = () => {
   const [vat, setVat] = useState("");
   const [totalPrice, setTotalPrice] = useState("");
 
+  const [notification, setNotification] = useState(null);
+
   const navigate = useNavigate();
+  const username = localStorage.getItem("username");
 
+  // Calculate total price whenever quantity, unitPrice or VAT changes
   useEffect(() => {
-    const calculateTotalPrice = () => {
-      const quantityValue = parseFloat(quantity) || 0;
-      const unitPriceValue = parseFloat(unitPrice) || 0;
-      const vatValue = parseFloat(vat) || 0;
-
-      const basePrice = quantityValue * unitPriceValue;
-      const vatAmount = (vatValue / 100) * basePrice;
-      const total = basePrice + vatAmount;
-
-      setTotalPrice(total.toFixed(2));
-    };
-
-    calculateTotalPrice();
+    const q = parseFloat(quantity) || 0;
+    const u = parseFloat(unitPrice) || 0;
+    const v = parseFloat(vat) || 0;
+    const base = q * u;
+    const total = base + (v / 100) * base;
+    setTotalPrice(total.toFixed(2));
   }, [quantity, unitPrice, vat]);
 
-  const role = localStorage.getItem("role");
-  const storename = localStorage.getItem("storename");
-  const username = localStorage.getItem("username");
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const salesInsert = {
+    // Validation
+    if (!date || !customerName || !itemDescription || !currency || !paymentMethod) {
+      showNotification("All required fields must be filled.", "error");
+      return;
+    }
+
+    if (isNaN(quantity) || quantity <= 0) {
+      showNotification("Quantity must be a positive number.", "error");
+      return;
+    }
+
+    if (isNaN(unitPrice) || unitPrice <= 0) {
+      showNotification("Unit Price must be a positive number.", "error");
+      return;
+    }
+
+    // Duplicate check: date + customer + item + totalPrice
+    const isDuplicate = salesForm.some(
+      (sale) =>
+        sale.date === date &&
+        sale.customerName.toLowerCase() === customerName.toLowerCase() &&
+        sale.itemDescription.toLowerCase() === itemDescription.toLowerCase() &&
+        Number(sale.totalPrice) === Number(totalPrice)
+    );
+
+    if (isDuplicate) {
+      showNotification("Duplicate sale detected! Entry not saved.", "error");
+      return;
+    }
+
+    const saleData = {
       date,
       cashierName: username,
       customerName,
       itemDescription,
       paymentMethod,
       currency,
-      balance,
-      quantity: parseFloat(quantity) || 0,
-      unitPrice: parseFloat(unitPrice) || 0,
+      balance: parseFloat(balance) || 0,
+      quantity: parseFloat(quantity),
+      unitPrice: parseFloat(unitPrice),
       vat: parseFloat(vat) || 0,
-      totalPrice: parseFloat(totalPrice) || 0,
+      totalPrice: parseFloat(totalPrice),
     };
 
     axios
-      .post("https://accounting-system-1.onrender.com/salesmodel/create-sale", salesInsert)
+      .post("https://accounting-system-1.onrender.com/salesmodel/create-sale", saleData)
       .then((res) => {
-        console.log({ status: res.status });
-        setSalesForm((prev) => [...prev, salesInsert]);
-        alert(`✅ Sale finalized with a total price of $${totalPrice}`);
+        setSalesForm((prev) => [...prev, saleData]);
 
-        // ✅ CLEAR ALL FORM FIELDS AFTER SUCCESSFUL SAVE
+        showNotification(`✅ Sale saved! Total: ${totalPrice} ${currency}`);
+
+      
         setDate("");
         setCustomerName("");
         setItemDescription("");
@@ -76,90 +126,61 @@ const Sales = () => {
         setVat("");
         setTotalPrice("");
       })
-      .catch((error) => {
-        console.error("❌ Error creating sale:", error);
-        alert("Failed to create sale. Please try again.");
+      .catch((err) => {
+        console.error(err);
+        showNotification("❌ Failed to create sale. Try again.", "error");
       });
   };
 
-  const handleFinalize = () => {
-    navigate("/salesModuleDashboard");
-  };
+  const handleFinalize = () => navigate("/salesModuleDashboard");
 
   return (
     <div>
-      <nav className="navbar bg-grey border-bottom border-body mb-3 shadow-sm p-3 rounded bg-dark border-bottom">
-        <a className="navbar-brand text-white">
-          <b>CREATE A SALE</b>
-        </a>
+      {notification && (
+        <Toast
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
+
+      <nav className="navbar bg-dark border-bottom py-3 mb-3 shadow-sm rounded">
+        <a className="navbar-brand text-white"><b>CREATE A SALE</b></a>
       </nav>
 
-      <div className="d-flex justify-content-end" style={{ padding: 0 }}>
-        {/* ✅ Go to the previous page dynamically */}
-        <button onClick={() => navigate(-1)} className="btn btn-secondary">
-          BACK
-        </button>
+      <div className="d-flex justify-content-end mb-3">
+        <button onClick={() => navigate(-1)} className="btn btn-secondary">BACK</button>
       </div>
 
       <div className="card mx-auto shadow-lg" style={{ maxWidth: "90rem", marginTop: "1rem" }}>
         <div className="card-body">
           <p>SALES FORM</p>
           <form onSubmit={handleSubmit}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "15px" }}>
-              <div className="form-group" style={{ flex: "1" }}>
-                <label htmlFor="date">Date</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  id="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
+            <div className="d-flex gap-3 mb-3">
+              <div className="form-group flex-1">
+                <label>Date</label>
+                <input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
-              <div className="form-group" style={{ flex: "1" }}>
-                <label htmlFor="cashierName">Cashier Name</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="cashierName"
-                  value={username}
-                  disabled
-                />
+              <div className="form-group flex-1">
+                <label>Cashier Name</label>
+                <input type="text" className="form-control" value={username} disabled />
               </div>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "15px" }}>
-              <div className="form-group" style={{ flex: "1" }}>
-                <label htmlFor="customerName">Customer Name</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="customerName"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                />
-              </div>
+            <div className="form-group mb-3">
+              <label>Customer Name</label>
+              <input type="text" className="form-control" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="itemDescription">Item Description</label>
-              <textarea
-                className="form-control"
-                id="itemDescription"
-                value={itemDescription}
-                onChange={(e) => setItemDescription(e.target.value)}
-              />
+            <div className="form-group mb-3">
+              <label>Item Description</label>
+              <textarea className="form-control" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} />
             </div>
 
-            <div style={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
-              <div className="form-group col-md-4" style={{ flex: "1" }}>
-                <label htmlFor="paymentMethod">Payment Option</label>
-                <select
-                  id="paymentMethod"
-                  className="form-control"
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                >
+            <div className="d-flex gap-3 flex-wrap mb-3">
+              <div className="form-group flex-1">
+                <label>Payment Option</label>
+                <select className="form-control" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
                   <option defaultValue>Choose...</option>
                   <option>Cash</option>
                   <option>Ecocash USD</option>
@@ -167,14 +188,9 @@ const Sales = () => {
                   <option>Zig Swipe</option>
                 </select>
               </div>
-              <div className="form-group col-md-4" style={{ flex: "1" }}>
-                <label htmlFor="currency">Currency</label>
-                <select
-                  id="currency"
-                  className="form-control"
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                >
+              <div className="form-group flex-1">
+                <label>Currency</label>
+                <select className="form-control" value={currency} onChange={(e) => setCurrency(e.target.value)}>
                   <option defaultValue>Choose...</option>
                   <option>USD</option>
                   <option>ZWL</option>
@@ -182,77 +198,31 @@ const Sales = () => {
               </div>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-end",
-                gap: "10px",
-              }}
-            >
-              <div style={{ display: "flex", gap: "15px" }}>
-                <div className="form-group col-md-2" style={{ flexBasis: "200px" }}>
-                  <label htmlFor="balance">Balance</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    id="balance"
-                    value={balance}
-                    onChange={(e) => setBalance(e.target.value)}
-                  />
-                </div>
-                <div className="form-group col-md-2" style={{ flexBasis: "200px" }}>
-                  <label htmlFor="quantity">Quantity</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="quantity"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                  />
-                </div>
-                <div className="form-group col-md-2" style={{ flexBasis: "200px" }}>
-                  <label htmlFor="unitPrice">Unit Price</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="unitPrice"
-                    value={unitPrice}
-                    onChange={(e) => setUnitPrice(e.target.value)}
-                  />
-                </div>
+            <div className="d-flex gap-3 mb-3 justify-content-end flex-wrap">
+              <div className="form-group" style={{ flexBasis: "200px" }}>
+                <label>Balance</label>
+                <input type="number" className="form-control" value={balance} onChange={(e) => setBalance(e.target.value)} />
               </div>
-
-              <div style={{ display: "flex", gap: "15px" }}>
-                <div className="form-group col-md-2" style={{ flexBasis: "200px" }}>
-                  <label htmlFor="vat">V.A.T (%)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    id="vat"
-                    value={vat}
-                    onChange={(e) => setVat(e.target.value)}
-                  />
-                </div>
-                <div className="form-group col-md-2" style={{ flexBasis: "200px" }}>
-                  <label htmlFor="totalPrice">Total Price</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    id="totalPrice"
-                    value={totalPrice}
-                    readOnly
-                  />
-                </div>
+              <div className="form-group" style={{ flexBasis: "200px" }}>
+                <label>Quantity</label>
+                <input type="number" className="form-control" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+              </div>
+              <div className="form-group" style={{ flexBasis: "200px" }}>
+                <label>Unit Price</label>
+                <input type="number" className="form-control" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} />
+              </div>
+              <div className="form-group" style={{ flexBasis: "200px" }}>
+                <label>VAT (%)</label>
+                <input type="number" className="form-control" value={vat} onChange={(e) => setVat(e.target.value)} />
+              </div>
+              <div className="form-group" style={{ flexBasis: "200px" }}>
+                <label>Total Price</label>
+                <input type="number" className="form-control" value={totalPrice} readOnly />
               </div>
             </div>
 
-            <button type="submit" className="btn btn-success mt-3">
-              SAVE SALE
-            </button>
-            <button onClick={handleFinalize} className="btn btn-primary mt-3 ms-3">
-              FINALIZE
-            </button>
+            <button type="submit" className="btn btn-success mt-3">SAVE SALE</button>
+            <button type="button" onClick={handleFinalize} className="btn btn-primary mt-3 ms-3">FINALIZE</button>
           </form>
         </div>
       </div>
