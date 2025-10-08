@@ -130,51 +130,66 @@ router.get("/download/pdf", async (req, res) => {
   }
 });
 
-// Excel Export Route
+// Excel Export Route with optional date filter
 router.get("/download/excel", async (req, res) => {
-   try {
-     const files = await expensesSchema.find();
-     const workbook = new ExcelJS.Workbook();
-     const worksheet = workbook.addWorksheet("Expense Report");
+  try {
+    const { date } = req.query; // expected format: YYYY-MM-DD
 
-     // Add Header Row
-     worksheet.columns = [
-       { header: "No.", key: "no", width: 5 },
-       { header: "Date", key: "date", width: 15 },
-       { header: "Issued To", key: "issuedTo", width: 20 },
-       { header: "Description", key: "description", width: 30 },
-       { header: "Payment Method", key: "paymentMethod", width: 20 },
-       { header: "Expense Type", key: "expenseType", width: 20 },
-       { header: "Amount", key: "amount", width: 15 },
-       { header: "Authorized By", key: "authorisedBy", width: 20 },
-     ];
+    // Build a query object so we don't fetch everything if a date is supplied
+    const query = {};
+    if (date) {
+      // Use inclusive date range for the given day
+      const start = new Date(date);
+      const end = new Date(date);
+      end.setDate(end.getDate() + 1);
+      query.date = { $gte: start, $lt: end };
+    }
 
-     // Add Data Rows
-     files.forEach((file, index) => {
-       worksheet.addRow({
-         no: index + 1,
-         date: file.date ? file.date.toISOString().split("T")[0] : "N/A",
-         issuedTo: file.issuedTo || "N/A",
-         description: file.description || "N/A",
-         paymentMethod: file.paymentMethod || "N/A",
-         expenseType: file.expenseType || "N/A",
-         amount: file.amount ? file.amount.toFixed(2) : "0.00",
-         authorisedBy: file.authorisedBy || "N/A",
-       });
-     });
+    const files = await expensesSchema.find(query).sort({ date: 1 });
 
-     // Style the Header Row
-     worksheet.getRow(1).font = { bold: true };
-     worksheet.getRow(1).alignment = { horizontal: "center" };
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Expense Report");
 
-     res.setHeader("Content-Disposition", 'attachment; filename="output.xlsx"');
-     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-     workbook.xlsx.write(res).then(() => res.end());
-   } catch (error) {
-     console.error(error);
-     res.status(500).send("Error generating Excel file");
-   }
+    worksheet.columns = [
+      { header: "No.", key: "no", width: 5 },
+      { header: "Date", key: "date", width: 15 },
+      { header: "Issued To", key: "issuedTo", width: 20 },
+      { header: "Description", key: "description", width: 30 },
+      { header: "Payment Method", key: "paymentMethod", width: 20 },
+      { header: "Expense Type", key: "expenseType", width: 20 },
+      { header: "Amount", key: "amount", width: 15 },
+      { header: "Authorized By", key: "authorisedBy", width: 20 },
+    ];
+
+    files.forEach((file, index) => {
+      worksheet.addRow({
+        no: index + 1,
+        date: file.date ? file.date.toISOString().split("T")[0] : "N/A",
+        issuedTo: file.issuedTo || "N/A",
+        description: file.description || "N/A",
+        paymentMethod: file.paymentMethod || "N/A",
+        expenseType: file.expenseType || "N/A",
+        amount: file.amount ? file.amount.toFixed(2) : "0.00",
+        authorisedBy: file.authorisedBy || "N/A",
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).alignment = { horizontal: "center" };
+
+    // Use a descriptive file name
+    const fileName = date ? `expenses_${date}.xlsx` : "expenses.xlsx";
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error generating Excel file");
+  }
 });
+
 
 
 export {router as expensesRoutes}
