@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-// ✅ Toast notification component
+// Toast notification component
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
-    const timer = setTimeout(onClose, 3000);
+    const timer = setTimeout(onClose, 3000); // Auto-close after 3s
     return () => clearTimeout(timer);
   }, [onClose]);
 
@@ -29,7 +29,7 @@ const Toast = ({ message, type, onClose }) => {
 };
 
 const Sales = () => {
-  const { id } = useParams(); // Get sale ID from URL
+  const [salesForm, setSalesForm] = useState([]);
   const [date, setDate] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [itemDescription, setItemDescription] = useState("");
@@ -40,13 +40,13 @@ const Sales = () => {
   const [unitPrice, setUnitPrice] = useState("");
   const [vat, setVat] = useState("");
   const [totalPrice, setTotalPrice] = useState("");
-  const [salesList, setSalesList] = useState([]);
 
   const [notification, setNotification] = useState(null);
+
   const navigate = useNavigate();
   const username = localStorage.getItem("username");
 
-  // 🧮 Auto-calculate total price
+  // Calculate total price whenever quantity, unitPrice or VAT changes
   useEffect(() => {
     const q = parseFloat(quantity) || 0;
     const u = parseFloat(unitPrice) || 0;
@@ -60,43 +60,10 @@ const Sales = () => {
     setNotification({ message, type });
   };
 
-  // 📥 Load existing sale data when editing
-  useEffect(() => {
-    if (id) {
-      axios
-        .get(`https://accounting-system-1.onrender.com/salesmodel/get-sale/${id}`)
-        .then((res) => {
-          const s = res.data;
-          setDate(s.date);
-          setCustomerName(s.customerName);
-          setItemDescription(s.itemDescription);
-          setCurrency(s.currency);
-          setBalance(s.balance);
-          setQuantity(s.quantity);
-          setPaymentMethod(s.paymentMethod);
-          setUnitPrice(s.unitPrice);
-          setVat(s.vat);
-          setTotalPrice(s.totalPrice);
-        })
-        .catch((err) => {
-          console.error(err);
-          showNotification("❌ Failed to load sale data.", "error");
-        });
-    }
-  }, [id]);
-
-  // 📜 Load all sales for duplicate check
-  useEffect(() => {
-    axios
-      .get("https://accounting-system-1.onrender.com/salesmodel/get-sales")
-      .then((res) => setSalesList(res.data))
-      .catch((err) => console.error(err));
-  }, []);
-
-  // 💾 Submit updated sale
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Validation
     if (!date || !customerName || !itemDescription || !currency || !paymentMethod) {
       showNotification("All required fields must be filled.", "error");
       return;
@@ -112,9 +79,9 @@ const Sales = () => {
       return;
     }
 
-    const isDuplicate = salesList.some(
+    // Duplicate check: date + customer + item + totalPrice
+    const isDuplicate = salesForm.some(
       (sale) =>
-        sale._id !== id &&
         sale.date === date &&
         sale.customerName.toLowerCase() === customerName.toLowerCase() &&
         sale.itemDescription.toLowerCase() === itemDescription.toLowerCase() &&
@@ -126,7 +93,7 @@ const Sales = () => {
       return;
     }
 
-    const updatedSale = {
+    const saleData = {
       date,
       cashierName: username,
       customerName,
@@ -141,18 +108,31 @@ const Sales = () => {
     };
 
     axios
-      .put(`https://accounting-system-1.onrender.com/salesmodel/update-sale/${id}`, updatedSale)
-      .then(() => {
-        showNotification("✅ Sale updated successfully!");
-        setTimeout(() => navigate("/salesModuleDashboard"), 2000);
+      .post("https://accounting-system-1.onrender.com/salesmodel/create-sale", saleData)
+      .then((res) => {
+        setSalesForm((prev) => [...prev, saleData]);
+
+        showNotification(`✅ Sale saved! Total: ${totalPrice} ${currency}`);
+
+      
+        setDate("");
+        setCustomerName("");
+        setItemDescription("");
+        setCurrency("");
+        setBalance("");
+        setQuantity("");
+        setPaymentMethod("");
+        setUnitPrice("");
+        setVat("");
+        setTotalPrice("");
       })
       .catch((err) => {
         console.error(err);
-        showNotification("❌ Failed to update sale. Try again.", "error");
+        showNotification("❌ Failed to create sale. Try again.", "error");
       });
   };
 
-  const handleCancel = () => navigate("/salesModuleDashboard");
+  const handleFinalize = () => navigate("/salesModuleDashboard");
 
   return (
     <div>
@@ -165,30 +145,21 @@ const Sales = () => {
       )}
 
       <nav className="navbar bg-dark border-bottom py-3 mb-3 shadow-sm rounded">
-        <a className="navbar-brand text-white">
-          <b>UPDATE SALE RECORD</b>
-        </a>
+        <a className="navbar-brand text-white"><b>CREATE A SALE</b></a>
       </nav>
 
       <div className="d-flex justify-content-end mb-3">
-        <button onClick={handleCancel} className="btn btn-secondary">
-          BACK
-        </button>
+        <button onClick={() => navigate(-1)} className="btn btn-secondary">BACK</button>
       </div>
 
       <div className="card mx-auto shadow-lg" style={{ maxWidth: "90rem", marginTop: "1rem" }}>
         <div className="card-body">
-          <p>UPDATE SALES FORM</p>
+          <p>SALES FORM</p>
           <form onSubmit={handleSubmit}>
             <div className="d-flex gap-3 mb-3">
               <div className="form-group flex-1">
                 <label>Date</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
+                <input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
               <div className="form-group flex-1">
                 <label>Cashier Name</label>
@@ -198,32 +169,19 @@ const Sales = () => {
 
             <div className="form-group mb-3">
               <label>Customer Name</label>
-              <input
-                type="text"
-                className="form-control"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-              />
+              <input type="text" className="form-control" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
             </div>
 
             <div className="form-group mb-3">
               <label>Item Description</label>
-              <textarea
-                className="form-control"
-                value={itemDescription}
-                onChange={(e) => setItemDescription(e.target.value)}
-              />
+              <textarea className="form-control" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} />
             </div>
 
             <div className="d-flex gap-3 flex-wrap mb-3">
               <div className="form-group flex-1">
                 <label>Payment Option</label>
-                <select
-                  className="form-control"
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                >
-                  <option>Choose...</option>
+                <select className="form-control" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+                  <option defaultValue>Choose...</option>
                   <option>Cash</option>
                   <option>Ecocash USD</option>
                   <option>Ecocash ZIG</option>
@@ -232,12 +190,8 @@ const Sales = () => {
               </div>
               <div className="form-group flex-1">
                 <label>Currency</label>
-                <select
-                  className="form-control"
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                >
-                  <option>Choose...</option>
+                <select className="form-control" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                  <option defaultValue>Choose...</option>
                   <option>USD</option>
                   <option>ZWL</option>
                 </select>
@@ -247,61 +201,28 @@ const Sales = () => {
             <div className="d-flex gap-3 mb-3 justify-content-end flex-wrap">
               <div className="form-group" style={{ flexBasis: "200px" }}>
                 <label>Balance</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={balance}
-                  onChange={(e) => setBalance(e.target.value)}
-                />
+                <input type="number" className="form-control" value={balance} onChange={(e) => setBalance(e.target.value)} />
               </div>
               <div className="form-group" style={{ flexBasis: "200px" }}>
                 <label>Quantity</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                />
+                <input type="number" className="form-control" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
               </div>
               <div className="form-group" style={{ flexBasis: "200px" }}>
                 <label>Unit Price</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={unitPrice}
-                  onChange={(e) => setUnitPrice(e.target.value)}
-                />
+                <input type="number" className="form-control" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} />
               </div>
               <div className="form-group" style={{ flexBasis: "200px" }}>
                 <label>VAT (%)</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={vat}
-                  onChange={(e) => setVat(e.target.value)}
-                />
+                <input type="number" className="form-control" value={vat} onChange={(e) => setVat(e.target.value)} />
               </div>
               <div className="form-group" style={{ flexBasis: "200px" }}>
                 <label>Total Price</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={totalPrice}
-                  readOnly
-                />
+                <input type="number" className="form-control" value={totalPrice} readOnly />
               </div>
             </div>
 
-            <button type="submit" className="btn btn-success mt-3">
-              UPDATE SALE
-            </button>
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="btn btn-primary mt-3 ms-3"
-            >
-              CANCEL
-            </button>
+            <button type="submit" className="btn btn-success mt-3">SAVE SALE</button>
+            <button type="button" onClick={handleFinalize} className="btn btn-primary mt-3 ms-3">FINALIZE</button>
           </form>
         </div>
       </div>
