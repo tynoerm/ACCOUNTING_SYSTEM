@@ -16,6 +16,7 @@ const Stock = () => {
   const [buyingPrice, setBuyingPrice] = useState("");
   const [sellingPrice, setSellingPrice] = useState("");
   const [receivedBy, setReceivedBy] = useState("");
+  const [stockLocation, setStockLocation] = useState(""); // 🆕 stock location
   const [error, setError] = useState("");
 
   const [show, setShow] = useState(false);
@@ -24,6 +25,13 @@ const Stock = () => {
   // 🆕 Download modal states
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [downloadDate, setDownloadDate] = useState(new Date());
+
+  // 🆕 Transfer modal states
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [fromLocation, setFromLocation] = useState("");
+  const [toLocation, setToLocation] = useState("");
+  const [transferQuantity, setTransferQuantity] = useState("");
+  const [selectedStockItem, setSelectedStockItem] = useState("");
 
   const role = localStorage.getItem("role");
   const storename = localStorage.getItem("storename");
@@ -56,6 +64,9 @@ const Stock = () => {
 
   const handleDownloadClose = () => setShowDownloadModal(false);
 
+  const handleTransferShow = () => setShowTransferModal(true);
+  const handleTransferClose = () => setShowTransferModal(false);
+
   // 🟢 Save Stock
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -68,20 +79,22 @@ const Stock = () => {
       !transportCost ||
       !buyingPrice ||
       !sellingPrice ||
-      !receivedBy
+      !receivedBy ||
+      !stockLocation
     ) {
       setError("All fields are required");
       return;
     }
 
-    const stringPattern = /^[A-Za-z\s.,!?]+$/;
+    const stringPattern = /^[A-Za-z0-9\s.,!?-]+$/;
     if (
       !stringPattern.test(supplierName) ||
       !stringPattern.test(stockDescription) ||
-      !stringPattern.test(receivedBy)
+      !stringPattern.test(receivedBy) ||
+      !stringPattern.test(stockLocation)
     ) {
       setError(
-        "Supplier Name, Description, and Received By should contain only letters and spaces."
+        "Supplier Name, Description, Received By and Location should contain valid characters."
       );
       return;
     }
@@ -113,6 +126,7 @@ const Stock = () => {
       buyingPrice,
       sellingPrice,
       receivedBy,
+      stockLocation, // 🆕 included location
     };
 
     axios
@@ -127,6 +141,7 @@ const Stock = () => {
         setBuyingPrice("");
         setSellingPrice("");
         setReceivedBy("");
+        setStockLocation("");
         setShow(false);
       })
       .catch((error) => {
@@ -164,6 +179,36 @@ const Stock = () => {
     }
   };
 
+  // 🆕 Transfer Stock
+  const handleTransferStock = async (e) => {
+    e.preventDefault();
+
+    if (!selectedStockItem || !fromLocation || !toLocation || !transferQuantity) {
+      alert("Please fill in all fields.");
+      return;
+    }
+
+    const payload = {
+      stockId: selectedStockItem,
+      fromLocation,
+      toLocation,
+      quantity: transferQuantity,
+    };
+
+    try {
+      await axios.post("https://accounting-system-1.onrender.com/stock/transfer", payload);
+      alert("Stock transferred successfully");
+      setShowTransferModal(false);
+      setFromLocation("");
+      setToLocation("");
+      setTransferQuantity("");
+      setSelectedStockItem("");
+    } catch (error) {
+      console.error(error);
+      alert("Error transferring stock.");
+    }
+  };
+
   return (
     <div>
       <nav className="navbar navbar-dark bg-dark border-bottom border-light py-3">
@@ -177,19 +222,15 @@ const Stock = () => {
           ADD STOCK
         </Button>
 
-        <Button
-          variant="success"
-          onClick={handleDownloadShow}
-          className="px-4"
-        >
+        <Button variant="primary" onClick={handleTransferShow} className="px-4">
+          TRANSFER STOCK
+        </Button>
+
+        <Button variant="success" onClick={handleDownloadShow} className="px-4">
           DOWNLOAD EXCEL
         </Button>
 
-        <Button
-          variant="secondary"
-          className="px-4"
-          onClick={() => navigate(-1)}
-        >
+        <Button variant="secondary" className="px-4" onClick={() => navigate(-1)}>
           BACK
         </Button>
       </div>
@@ -206,7 +247,7 @@ const Stock = () => {
         />
       </div>
 
-      {/* Stock Add Modal */}
+      {/* Add Stock Modal */}
       <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false} size="xl">
         <Modal.Header closeButton>
           <Modal.Title>Add Stock</Modal.Title>
@@ -277,7 +318,7 @@ const Stock = () => {
             </div>
 
             <div className="row mb-3">
-              <div className="col-md-6">
+              <div className="col-md-4">
                 <label className="form-label">Selling Price</label>
                 <input
                   type="number"
@@ -286,13 +327,22 @@ const Stock = () => {
                   onChange={(e) => setSellingPrice(e.target.value)}
                 />
               </div>
-              <div className="col-md-6">
+              <div className="col-md-4">
                 <label className="form-label">Received By</label>
                 <input
                   type="text"
                   className="form-control"
                   value={receivedBy}
                   onChange={(e) => setReceivedBy(e.target.value)}
+                />
+              </div>
+              <div className="col-md-4">
+                <label className="form-label">Stock Location</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={stockLocation}
+                  onChange={(e) => setStockLocation(e.target.value)}
                 />
               </div>
             </div>
@@ -304,27 +354,64 @@ const Stock = () => {
         </Modal.Body>
       </Modal>
 
-      {/* 🆕 Download Date Modal */}
-      <Modal show={showDownloadModal} onHide={handleDownloadClose} centered>
+      {/* Transfer Stock Modal */}
+      <Modal show={showTransferModal} onHide={handleTransferClose} centered>
         <Modal.Header closeButton>
-          <Modal.Title>Select date to download</Modal.Title>
+          <Modal.Title>Transfer Stock</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <DatePicker
-            selected={downloadDate}
-            onChange={(date) => setDownloadDate(date)}
-            className="form-control"
-            dateFormat="yyyy-MM-dd"
-          />
+          <form onSubmit={handleTransferStock}>
+            <div className="mb-3">
+              <label>Select Stock Item</label>
+              <select
+                className="form-control"
+                value={selectedStockItem}
+                onChange={(e) => setSelectedStockItem(e.target.value)}
+              >
+                <option value="">--Select--</option>
+                {stockForm.map((item) => (
+                  <option key={item._id} value={item._id}>
+                    {item.stockDescription} ({item.stockLocation}) - Qty: {item.stockQuantity}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label>From Location</label>
+              <input
+                type="text"
+                className="form-control"
+                value={fromLocation}
+                onChange={(e) => setFromLocation(e.target.value)}
+              />
+            </div>
+
+            <div className="mb-3">
+              <label>To Location</label>
+              <input
+                type="text"
+                className="form-control"
+                value={toLocation}
+                onChange={(e) => setToLocation(e.target.value)}
+              />
+            </div>
+
+            <div className="mb-3">
+              <label>Transfer Quantity</label>
+              <input
+                type="number"
+                className="form-control"
+                value={transferQuantity}
+                onChange={(e) => setTransferQuantity(e.target.value)}
+              />
+            </div>
+
+            <Button type="submit" variant="primary" className="w-100">
+              TRANSFER
+            </Button>
+          </form>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleDownloadClose}>
-            Cancel
-          </Button>
-          <Button variant="success" onClick={handleExcelDownload}>
-            Download Excel
-          </Button>
-        </Modal.Footer>
       </Modal>
 
       {/* Table */}
@@ -339,6 +426,7 @@ const Stock = () => {
             <th>Buying Price</th>
             <th>Selling Price</th>
             <th>Received By</th>
+            <th>Location</th>
           </tr>
         </thead>
         <tbody>
@@ -353,11 +441,12 @@ const Stock = () => {
                 <td>{stock.buyingPrice || "0.00"}</td>
                 <td>{stock.sellingPrice || "0.00"}</td>
                 <td>{stock.receivedBy || "N/A"}</td>
+                <td>{stock.stockLocation || "N/A"}</td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="8" className="text-center">
+              <td colSpan="9" className="text-center">
                 No stock records found for this date.
               </td>
             </tr>
