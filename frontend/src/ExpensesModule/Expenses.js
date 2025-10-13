@@ -33,6 +33,7 @@ const Notification = ({ message, type, onClose }) => {
 
 const Expenses = () => {
   const [expensesForm, setExpensesForm] = useState([]);
+  const [tempExpenses, setTempExpenses] = useState([]); // 🆕 temp list for batch input
   const [show, setShow] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [downloadDate, setDownloadDate] = useState("");
@@ -43,13 +44,13 @@ const Expenses = () => {
   const [expenseType, setExpenseType] = useState("");
   const [amount, setAmount] = useState("");
   const [authorisedBy, setAuthorisedBy] = useState("");
-  const [error, setError] = useState("");
   const [notification, setNotification] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
 
   const navigate = useNavigate();
-
-  const userRole = localStorage.getItem("role"); // "admin" or "user"
+  const userRole = localStorage.getItem("role");
 
   // Fetch expenses
   useEffect(() => {
@@ -60,12 +61,17 @@ const Expenses = () => {
   }, []);
 
   const filteredExpenses = expensesForm.filter((q) => {
-    const expenseDate = q.date ? new Date(q.date).toISOString().split("T")[0] : "";
+    const expenseDate = q.date
+      ? new Date(q.date).toISOString().split("T")[0]
+      : "";
     return expenseDate === selectedDate;
   });
 
   const handleShow = () => setShow(true);
-  const handleClose = () => setShow(false);
+  const handleClose = () => {
+    setShow(false);
+    setTempExpenses([]);
+  };
   const handleDownloadShow = () => {
     setDownloadDate(selectedDate || new Date().toISOString().split("T")[0]);
     setShowDownloadModal(true);
@@ -76,22 +82,12 @@ const Expenses = () => {
     setNotification({ message, type });
   };
 
-  const handleSubmit = (e) => {
+  // 🆕 Add to list (not saving yet)
+  const handleAddToList = (e) => {
     e.preventDefault();
 
-    if (!date || !issuedTo || !description || !paymentMethod || !expenseType || !authorisedBy) {
+    if (!date || !issuedTo || !description || !paymentMethod || !expenseType || !amount || !authorisedBy) {
       showNotification("All fields are required.", "error");
-      return;
-    }
-
-    const stringPattern = /^[A-Za-z\s.,!?]+$/;
-    if (!stringPattern.test(issuedTo) || !stringPattern.test(authorisedBy)) {
-      showNotification("Issued To and Authorised By should only contain letters and spaces.", "error");
-      return;
-    }
-
-    if (description.length < 5) {
-      showNotification("Description should be at least 5 characters long.", "error");
       return;
     }
 
@@ -100,33 +96,39 @@ const Expenses = () => {
       return;
     }
 
-    const isDuplicate = expensesForm.some(
-      (exp) =>
-        exp.date === date &&
-        exp.issuedTo.toLowerCase() === issuedTo.toLowerCase() &&
-        exp.description.toLowerCase() === description.toLowerCase() &&
-        Number(exp.amount) === Number(amount)
-    );
+    const newExpense = { date, issuedTo, description, paymentMethod, expenseType, amount, authorisedBy };
 
-    if (isDuplicate) {
-      showNotification("Duplicate expense detected! Entry not saved.", "error");
+    setTempExpenses((prev) => [...prev, newExpense]);
+    setDate("");
+    setIssuedTo("");
+    setDescription("");
+    setPaymentMethod("");
+    setExpenseType("");
+    setAmount("");
+    setAuthorisedBy("");
+  };
+
+  // 🆕 Finalize and send all at once
+  const handleFinalizeAll = async () => {
+    if (tempExpenses.length < 1) {
+      showNotification("No expenses to finalize!", "error");
       return;
     }
 
-    const expensesInsert = { date, issuedTo, description, paymentMethod, expenseType, amount, authorisedBy };
+    try {
+      await axios.post(
+        "https://accounting-system-1.onrender.com/expense/bulk-create",
+        { expenses: tempExpenses }
+      );
 
-    axios
-      .post("https://accounting-system-1.onrender.com/expense/create-expense", expensesInsert)
-      .then((res) => {
-        setExpensesForm((prev) => [...prev, { ...expensesInsert, _id: res.data.data._id }]);
-        setDate(""); setIssuedTo(""); setDescription(""); setPaymentMethod(""); setExpenseType(""); setAmount(""); setAuthorisedBy("");
-        setShow(false);
-        showNotification("Expense saved successfully!");
-      })
-      .catch((err) => {
-        console.error(err);
-        showNotification("An error occurred while submitting the expense.", "error");
-      });
+      setExpensesForm((prev) => [...prev, ...tempExpenses]);
+      setTempExpenses([]);
+      setShow(false);
+      showNotification("All expenses saved successfully!");
+    } catch (err) {
+      console.error(err);
+      showNotification("An error occurred while saving expenses.", "error");
+    }
   };
 
   const handleDelete = async (id) => {
@@ -170,52 +172,86 @@ const Expenses = () => {
   return (
     <div>
       {notification && (
-        <Notification message={notification.message} type={notification.type} onClose={() => setNotification(null)} />
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
       )}
 
       <nav className="navbar navbar-dark bg-dark border-bottom border-light py-3">
-        <a className="navbar-brand text-white" href="#"><b>EXPENSES MANAGEMENT</b></a>
+        <a className="navbar-brand text-white" href="#">
+          <b>EXPENSES MANAGEMENT</b>
+        </a>
       </nav>
 
       <div className="d-flex justify-content-between my-4">
-        <Button variant="success" onClick={handleShow} className="px-4">CREATE AN EXPENSE</Button>
-        <Button variant="success" onClick={handleDownloadShow} className="px-4">DOWNLOAD EXCEL</Button>
-        <Button variant="secondary" className="px-4" onClick={() => navigate(-1)}>BACK</Button>
+        <Button variant="success" onClick={handleShow} className="px-4">
+          CREATE MULTIPLE EXPENSES
+        </Button>
+        <Button variant="success" onClick={handleDownloadShow} className="px-4">
+          DOWNLOAD EXCEL
+        </Button>
+        <Button variant="secondary" className="px-4" onClick={() => navigate(-1)}>
+          BACK
+        </Button>
       </div>
 
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2 className="text-secondary">Expenses for {selectedDate}</h2>
-        <input type="date" className="form-control w-auto" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+        <input
+          type="date"
+          className="form-control w-auto"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+        />
       </div>
 
-      {/* Create Expense Modal */}
+      {/* Create Multiple Expenses Modal */}
       <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false} size="xl">
         <Modal.Header closeButton>
-          <Modal.Title>Create an Expense</Modal.Title>
+          <Modal.Title>Enter Multiple Expenses</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <form onSubmit={handleSubmit}>
-            {error && <div className="alert alert-danger">{error}</div>}
+          <form onSubmit={handleAddToList}>
             <div className="row mb-3">
               <div className="col-md-6">
                 <label className="form-label">Date</label>
-                <input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} />
+                <input
+                  type="date"
+                  className="form-control"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                />
               </div>
               <div className="col-md-6">
                 <label className="form-label">Issued To:</label>
-                <input type="text" className="form-control" value={issuedTo} onChange={(e) => setIssuedTo(e.target.value)} />
+                <input
+                  type="text"
+                  className="form-control"
+                  value={issuedTo}
+                  onChange={(e) => setIssuedTo(e.target.value)}
+                />
               </div>
             </div>
 
             <div className="col-md-6 mb-3">
               <label className="form-label">Description</label>
-              <textarea className="form-control" value={description} onChange={(e) => setDescription(e.target.value)} />
+              <textarea
+                className="form-control"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </div>
 
-            <div style={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
-              <div className="form-group col-md-4" style={{ flex: "1" }}>
-                <label>Payment Option</label>
-                <select className="form-control" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+            <div className="row mb-3">
+              <div className="col-md-4">
+                <label>Payment Method</label>
+                <select
+                  className="form-control"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                >
                   <option value="" disabled>Choose...</option>
                   <option>Cash</option>
                   <option>Ecocash</option>
@@ -223,9 +259,13 @@ const Expenses = () => {
                   <option>Zig Swipe</option>
                 </select>
               </div>
-              <div className="form-group col-md-4" style={{ flex: "1" }}>
-                <label>Type of Expense</label>
-                <select className="form-control" value={expenseType} onChange={(e) => setExpenseType(e.target.value)}>
+              <div className="col-md-4">
+                <label>Expense Type</label>
+                <select
+                  className="form-control"
+                  value={expenseType}
+                  onChange={(e) => setExpenseType(e.target.value)}
+                >
                   <option value="" disabled>Choose...</option>
                   <option>food</option>
                   <option>transport fee</option>
@@ -243,21 +283,68 @@ const Expenses = () => {
                   <option>shop expenses</option>
                 </select>
               </div>
-            </div>
-
-            <div className="row mb-3 mt-3">
-              <div className="col-md-6">
-                <label className="form-label">Amount</label>
-                <input type="number" className="form-control" value={amount} onChange={(e) => setAmount(e.target.value)} />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label">Authorised By</label>
-                <input type="text" className="form-control" value={authorisedBy} onChange={(e) => setAuthorisedBy(e.target.value)} />
+              <div className="col-md-4">
+                <label>Amount</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
               </div>
             </div>
 
-            <Button variant="primary" type="submit" className="w-100 mt-4">FINALIZE EXPENSE</Button>
+            <div className="mb-3">
+              <label className="form-label">Authorised By</label>
+              <input
+                type="text"
+                className="form-control"
+                value={authorisedBy}
+                onChange={(e) => setAuthorisedBy(e.target.value)}
+              />
+            </div>
+
+            <Button variant="info" type="submit" className="w-100 mb-4">
+              ➕ ADD TO LIST
+            </Button>
           </form>
+
+          {/* List of unfinalized expenses */}
+          {tempExpenses.length > 0 && (
+            <>
+              <h5 className="text-secondary mb-2">Pending Expenses</h5>
+              <table className="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Issued To</th>
+                    <th>Description</th>
+                    <th>Payment</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Authorised</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tempExpenses.map((exp, index) => (
+                    <tr key={index}>
+                      <td>{exp.date}</td>
+                      <td>{exp.issuedTo}</td>
+                      <td>{exp.description}</td>
+                      <td>{exp.paymentMethod}</td>
+                      <td>{exp.expenseType}</td>
+                      <td>{exp.amount}</td>
+                      <td>{exp.authorisedBy}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <Button variant="primary" onClick={handleFinalizeAll} className="w-100">
+                ✅ FINALIZE & SAVE ALL EXPENSES
+              </Button>
+            </>
+          )}
         </Modal.Body>
       </Modal>
 
@@ -267,16 +354,25 @@ const Expenses = () => {
           <Modal.Title>Select date to download</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <input type="date" className="form-control" value={downloadDate} onChange={(e) => setDownloadDate(e.target.value)} />
+          <input
+            type="date"
+            className="form-control"
+            value={downloadDate}
+            onChange={(e) => setDownloadDate(e.target.value)}
+          />
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleDownloadClose}>Cancel</Button>
-          <Button variant="success" onClick={handleExcelDownload}>Download Excel</Button>
+          <Button variant="secondary" onClick={handleDownloadClose}>
+            Cancel
+          </Button>
+          <Button variant="success" onClick={handleExcelDownload}>
+            Download Excel
+          </Button>
         </Modal.Footer>
       </Modal>
 
       {/* Expenses Table */}
-      <table className="table table-striped table-bordered">
+      <table className="table table-striped table-bordered mt-4">
         <thead className="table-dark">
           <tr>
             <th>Date</th>
@@ -298,18 +394,26 @@ const Expenses = () => {
                 <td>{expense.description || "N/A"}</td>
                 <td>{expense.paymentMethod || "N/A"}</td>
                 <td>{expense.expenseType || "N/A"}</td>
-                <td>{expense.amount !== undefined ? expense.amount : "N/A"}</td>
+                <td>{expense.amount}</td>
                 <td>{expense.authorisedBy || "N/A"}</td>
                 {userRole === "admin" && (
                   <td>
-                    <Button variant="danger" size="sm" onClick={() => handleDelete(expense._id)}>Delete</Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleDelete(expense._id)}
+                    >
+                      Delete
+                    </Button>
                   </td>
                 )}
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={userRole === "admin" ? 8 : 7}>No expense is found per selected date</td>
+              <td colSpan={userRole === "admin" ? 8 : 7}>
+                No expense found for selected date
+              </td>
             </tr>
           )}
         </tbody>
