@@ -17,6 +17,22 @@ router.post("/create-expense", async (req, res) => {
   }
 });
 
+// ✅ BULK CREATE expenses (for multiple entries)
+router.post("/bulk-create", async (req, res) => {
+  try {
+    const { expenses } = req.body;
+    if (!Array.isArray(expenses) || expenses.length === 0) {
+      return res.status(400).json({ message: "No expenses provided", status: 400 });
+    }
+
+    const result = await expensesSchema.insertMany(expenses);
+    res.json({ data: result, message: "All expenses created successfully", status: 200 });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error bulk creating expenses", status: 500 });
+  }
+});
+
 // ✅ GET all expenses
 router.get("/", async (req, res) => {
   try {
@@ -75,7 +91,7 @@ router.get("/download/excel", async (req, res) => {
         description: file.description || "N/A",
         paymentMethod: file.paymentMethod || "N/A",
         expenseType: file.expenseType || "N/A",
-        amount: file.amount ? file.amount.toFixed(2) : "0.00",
+        amount: file.amount ? Number(file.amount).toFixed(2) : "0.00",
         authorisedBy: file.authorisedBy || "N/A",
       });
     });
