@@ -20,7 +20,7 @@ const Dashboard = () => {
 
       {/* Dashboard Content */}
       <div className="row row-cols-1 row-cols-md-3 g-4" style={styles.cardContainer}>
-        {/* Sales Card */}
+        
         <div className="col">
           <div className="card shadow-lg rounded" style={styles.card}>
             <div className="card-body">
@@ -34,21 +34,10 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Quotations Card */}
-        <div className="col">
-          <div className="card shadow-lg rounded" style={styles.card}>
-            <div className="card-body">
-              <div style={styles.cardHeader}>
-                <FaFileInvoice style={styles.icon} />
-                <h5 className="card-title">QUOTATIONS</h5>
-              </div>
-              <p className="card-text">Create a quotation</p>
-              <Link to="/Quotation" className="btn btn-primary" style={styles.cardButton}>Next</Link>
-            </div>
-          </div>
-        </div>
+     
 
-        {/* Reports Card */}
+
+        
         <div className="col">
           <div className="card shadow-lg rounded" style={styles.card}>
             <div className="card-body">
