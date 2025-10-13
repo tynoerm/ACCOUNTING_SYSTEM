@@ -1,62 +1,50 @@
+import mongoose from "mongoose";
 import express from "express";
+import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
-import Expenses from "../../models/ExpensesModule/expenses.js";
+import expensesSchema from "../../models/ExpensesModule/expenses.js";
 
-const router = express.Router();
+let router = express.Router();
 
-/**
- * @route   POST /api/expenses/create-expense
- * @desc    Create a new expense record
- */
+// ✅ CREATE an expense
 router.post("/create-expense", async (req, res) => {
   try {
-    const expense = await Expenses.create(req.body);
-    res.json({ data: expense, message: "Record created successfully", status: 200 });
+    const result = await expensesSchema.create(req.body);
+    res.json({ data: result, message: "record created successfully", status: 200 });
   } catch (err) {
-    console.error("❌ Error creating expense:", err);
+    console.error(err);
     res.status(500).json({ message: "Error creating expense", status: 500 });
   }
 });
 
-/**
- * @route   GET /api/expenses
- * @desc    Fetch all expenses
- */
+// ✅ GET all expenses
 router.get("/", async (req, res) => {
   try {
-    const expenses = await Expenses.find().sort({ date: -1 });
-    res.json({ data: expenses, message: "Expenses fetched successfully", status: 200 });
+    const result = await expensesSchema.find().sort({ date: -1 });
+    res.json({ data: result, message: "expenses fetched successfully", status: 200 });
   } catch (err) {
-    console.error("❌ Error fetching expenses:", err);
+    console.error(err);
     res.status(500).json({ message: "Error fetching expenses", status: 500 });
   }
 });
 
-/**
- * @route   DELETE /api/expenses/:id
- * @desc    Delete an expense by ID
- */
+// ✅ DELETE an expense
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    await Expenses.findByIdAndDelete(id);
+    await expensesSchema.findByIdAndDelete(id);
     res.json({ message: "Expense deleted successfully", status: 200 });
   } catch (err) {
-    console.error("❌ Error deleting expense:", err);
+    console.error(err);
     res.status(500).json({ message: "Error deleting expense", status: 500 });
   }
 });
 
-/**
- * @route   GET /api/expenses/download/excel
- * @desc    Export expenses to Excel
- * @query   date (optional)
- */
+// ✅ Excel download route
 router.get("/download/excel", async (req, res) => {
   try {
     const { date } = req.query;
     const query = {};
-
     if (date) {
       const start = new Date(date);
       const end = new Date(date);
@@ -64,7 +52,7 @@ router.get("/download/excel", async (req, res) => {
       query.date = { $gte: start, $lt: end };
     }
 
-    const expenses = await Expenses.find(query).sort({ date: 1 });
+    const files = await expensesSchema.find(query).sort({ date: 1 });
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Expense Report");
 
@@ -79,16 +67,16 @@ router.get("/download/excel", async (req, res) => {
       { header: "Authorized By", key: "authorisedBy", width: 20 },
     ];
 
-    expenses.forEach((expense, index) => {
+    files.forEach((file, index) => {
       worksheet.addRow({
         no: index + 1,
-        date: expense.date ? expense.date.toISOString().split("T")[0] : "N/A",
-        issuedTo: expense.issuedTo || "N/A",
-        description: expense.description || "N/A",
-        paymentMethod: expense.paymentMethod || "N/A",
-        expenseType: expense.expenseType || "N/A",
-        amount: expense.amount ? expense.amount.toFixed(2) : "0.00",
-        authorisedBy: expense.authorisedBy || "N/A",
+        date: file.date ? file.date.toISOString().split("T")[0] : "N/A",
+        issuedTo: file.issuedTo || "N/A",
+        description: file.description || "N/A",
+        paymentMethod: file.paymentMethod || "N/A",
+        expenseType: file.expenseType || "N/A",
+        amount: file.amount ? file.amount.toFixed(2) : "0.00",
+        authorisedBy: file.authorisedBy || "N/A",
       });
     });
 
@@ -101,8 +89,8 @@ router.get("/download/excel", async (req, res) => {
 
     await workbook.xlsx.write(res);
     res.end();
-  } catch (err) {
-    console.error("❌ Error generating Excel:", err);
+  } catch (error) {
+    console.error(error);
     res.status(500).send("Error generating Excel file");
   }
 });
