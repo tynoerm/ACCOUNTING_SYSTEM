@@ -5,19 +5,21 @@ import stocksSchema from "../../models/StockModule/stocks.js";
 
 let router = express.Router();
 
-// Create stock
+// Create multiple stocks
 router.route("/create-stock").post(async (req, res, next) => {
-  await stocksSchema
-    .create(req.body)
-    .then((result) => {
-      res.json({
-        data: result,
-        message: "stocks created successfully",
-        status: 200,
-      });
-    })
-    .catch((err) => next(err));
+  try {
+    const stocks = Array.isArray(req.body) ? req.body : [req.body]; // accept single or multiple
+    const result = await stocksSchema.insertMany(stocks); // insert multiple at once
+    res.json({
+      data: result,
+      message: "Stocks created successfully",
+      status: 200,
+    });
+  } catch (err) {
+    next(err);
+  }
 });
+
 
 // Get all stocks
 router.route("/").get(async (req, res, next) => {
