@@ -1,6 +1,7 @@
 import express from "express";
 import ExcelJS from "exceljs";
 import salesModel from "../../models/SalesModule/sales.js";
+import stockModel from "../../models/StockModule/stocks.js"; // 👈 Make sure this exists
 import expensesModel from "../../models/ExpensesModule/expenses.js";
 
 const router = express.Router();
@@ -10,8 +11,23 @@ const router = express.Router();
 ========================= */
 router.post("/create-sale", async (req, res) => {
   try {
+    const { items } = req.body;
+
+    // 🔻 Deduct stock quantities automatically
+    for (const soldItem of items) {
+      const stockItem = await stockModel.findOne({
+        itemDescription: soldItem.itemDescription,
+      });
+
+      if (stockItem) {
+        stockItem.quantity -= soldItem.quantity;
+        if (stockItem.quantity < 0) stockItem.quantity = 0;
+        await stockItem.save();
+      }
+    }
+
     const result = await salesModel.create(req.body);
-    res.json({ data: result, message: "Sale record created successfully ✅" });
+    res.json({ data: result, message: "✅ Sale record created successfully" });
   } catch (error) {
     console.error("Error creating sale:", error);
     res.status(500).json({ message: "Failed to create sale" });
@@ -19,20 +35,23 @@ router.post("/create-sale", async (req, res) => {
 });
 
 /* =========================
-   📌 CREATE EXPENSE RECORD
+   📦 GET AVAILABLE STOCKS FOR SALES DROPDOWN
 ========================= */
-router.post("/create-expense", async (req, res) => {
+router.get("/get-stock-items", async (req, res) => {
   try {
-    const result = await expensesModel.create(req.body);
-    res.json({ data: result, message: "Expense record created successfully ✅" });
+    const stocks = await stockModel.find(
+      { quantity: { $gt: 0 } }, // only items in stock
+      "itemDescription unitPrice quantity" // only needed fields
+    );
+    res.json(stocks);
   } catch (error) {
-    console.error("Error creating expense:", error);
-    res.status(500).json({ message: "Failed to create expense" });
+    console.error("Error fetching stock items:", error);
+    res.status(500).json({ message: "Failed to fetch stock items" });
   }
 });
 
 /* =========================
-   📌 GET ALL SALES
+   📊 GET ALL SALES
 ========================= */
 router.get("/get-sales", async (req, res) => {
   try {
@@ -45,7 +64,7 @@ router.get("/get-sales", async (req, res) => {
 });
 
 /* =========================
-   📌 GET ALL EXPENSES
+   📉 GET ALL EXPENSES
 ========================= */
 router.get("/get-expenses", async (req, res) => {
   try {
@@ -58,7 +77,7 @@ router.get("/get-expenses", async (req, res) => {
 });
 
 /* =========================
-   📌 EXPORT SALES + EXPENSES TO ONE EXCEL SHEET
+   📤 EXPORT SALES + EXPENSES TO EXCEL
 ========================= */
 router.get("/export-report", async (req, res) => {
   try {
@@ -70,31 +89,32 @@ router.get("/export-report", async (req, res) => {
     worksheet.addRow([
       "Date",
       "Customer Name",
-      "Description",
+      "Item Description",
       "Quantity",
       "Unit Price",
-      "Total Amount",
+      "Total",
     ]);
 
     const sales = await salesModel.find().sort({ date: 1 });
     let totalSalesAmount = 0;
 
     sales.forEach((sale) => {
-      totalSalesAmount += Number(sale.totalAmount);
-      worksheet.addRow([
-        new Date(sale.date).toLocaleDateString(),
-        sale.customerName,
-        sale.description,
-        sale.quantity,
-        sale.unitPrice,
-        sale.totalAmount,
-      ]);
+      sale.items.forEach((item) => {
+        totalSalesAmount += Number(item.totalPrice);
+        worksheet.addRow([
+          new Date(sale.date).toLocaleDateString(),
+          sale.customerName,
+          item.itemDescription,
+          item.quantity,
+          item.unitPrice,
+          item.totalPrice,
+        ]);
+      });
     });
 
-    // Add total row for sales
     worksheet.addRow([]);
     worksheet.addRow(["", "", "", "", "TOTAL SALES", totalSalesAmount]);
-    worksheet.addRow([]); // Empty row between sections
+    worksheet.addRow([]);
 
     // ================= EXPENSES SECTION =================
     worksheet.addRow(["EXPENSES REPORT"]);
@@ -122,7 +142,6 @@ router.get("/export-report", async (req, res) => {
       ]);
     });
 
-    // Add total row for expenses
     worksheet.addRow([]);
     worksheet.addRow(["", "", "", "", "TOTAL EXPENSES", totalExpensesAmount]);
 
@@ -144,4 +163,4 @@ router.get("/export-report", async (req, res) => {
   }
 });
 
-export default router;
+export { router as salesRoutes };
