@@ -7,6 +7,7 @@ import "react-datepicker/dist/react-datepicker.css";
 
 const Stock = () => {
   const [stockForm, setStockForm] = useState([]);
+
   const [date, setDate] = useState(new Date());
   const [supplierName, setSupplierName] = useState("");
   const [stockDescription, setStockDescription] = useState("");
@@ -20,11 +21,14 @@ const Stock = () => {
 
   const [show, setShow] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [tempStockItems, setTempStockItems] = useState([]);
 
+  const [tempStockItems, setTempStockItems] = useState([]); // 🟢 Temporary items for multiple entry
+
+  // Download modal states
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [downloadDate, setDownloadDate] = useState(new Date());
 
+  // Transfer modal states
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [fromLocation, setFromLocation] = useState("");
   const [toLocation, setToLocation] = useState("");
@@ -33,16 +37,19 @@ const Stock = () => {
 
   const navigate = useNavigate();
 
+  // Load stock data
   useEffect(() => {
     axios
       .get("https://accounting-system-1.onrender.com/stock/")
       .then((res) => setStockForm(res.data.data))
-      .catch((err) => console.error(err));
+      .catch((error) => console.log(error));
   }, []);
 
+  // Filter by selected date
   const filteredStock = stockForm.filter((q) => {
     const stockDate = q.date ? new Date(q.date).toISOString().split("T")[0] : "";
-    return stockDate === selectedDate.toISOString().split("T")[0];
+    const selectedString = selectedDate.toISOString().split("T")[0];
+    return stockDate === selectedString;
   });
 
   const handleShow = () => setShow(true);
@@ -63,6 +70,7 @@ const Stock = () => {
     setStockLocation("");
   };
 
+  // Add single item to temporary list
   const handleAddItem = () => {
     if (
       !date ||
@@ -87,7 +95,7 @@ const Stock = () => {
       !stringPattern.test(stockLocation)
     ) {
       setError(
-        "Supplier Name, Description, Received By, and Location must contain valid characters."
+        "Supplier Name, Description, Received By and Location should contain valid characters."
       );
       return;
     }
@@ -103,7 +111,7 @@ const Stock = () => {
       sellingPrice <= 0
     ) {
       setError(
-        "Quantity, Buying Price, and Selling Price must be positive. Transport Cost cannot be negative."
+        "Stock Quantity, Buying Price, and Selling Price should be positive. Transport Cost cannot be negative."
       );
       return;
     }
@@ -125,6 +133,7 @@ const Stock = () => {
     setError("");
   };
 
+  // Submit all temporary items to backend
   const handleSubmitAll = async (e) => {
     e.preventDefault();
     if (tempStockItems.length === 0) {
@@ -146,8 +155,12 @@ const Stock = () => {
     }
   };
 
+  // Excel download
   const handleExcelDownload = async () => {
-    if (!downloadDate) return alert("Please select a date first.");
+    if (!downloadDate) {
+      alert("Please select a date first.");
+      return;
+    }
 
     try {
       const dateString = downloadDate.toISOString().split("T")[0];
@@ -164,55 +177,75 @@ const Stock = () => {
       link.click();
       document.body.removeChild(link);
       setShowDownloadModal(false);
-    } catch (err) {
-      console.error("Error downloading Excel:", err);
-      alert("Error downloading Excel file.");
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      alert("Error downloading Excel. Check console for details.");
     }
   };
 
+  // Transfer stock
   const handleTransferStock = async (e) => {
     e.preventDefault();
+
     if (!selectedStockItem || !fromLocation || !toLocation || !transferQuantity) {
-      return alert("All fields are required for transfer.");
+      alert("Please fill in all fields.");
+      return;
     }
 
+    const payload = {
+      stockId: selectedStockItem,
+      fromLocation,
+      toLocation,
+      quantity: transferQuantity,
+    };
+
     try {
-      await axios.post("https://accounting-system-1.onrender.com/stock/transfer", {
-        stockId: selectedStockItem,
-        fromLocation,
-        toLocation,
-        quantity: transferQuantity,
-      });
+      await axios.post("https://accounting-system-1.onrender.com/stock/transfer", payload);
       alert("Stock transferred successfully");
       setShowTransferModal(false);
       setFromLocation("");
       setToLocation("");
       setTransferQuantity("");
       setSelectedStockItem("");
-    } catch (err) {
-      console.error(err);
-      alert("Error transferring stock");
+    } catch (error) {
+      console.error(error);
+      alert("Error transferring stock.");
     }
   };
 
   return (
-    <div className="container my-4">
-      <nav className="navbar navbar-dark bg-dark border-bottom border-light py-3 mb-4">
-        <span className="navbar-brand mb-0 h1 text-white"><b>STOCK MANAGEMENT</b></span>
+    <div>
+      <nav className="navbar navbar-dark bg-dark border-bottom border-light py-3">
+        <a className="navbar-brand text-white" href="#">
+          <b>STOCK MANAGEMENT</b>
+        </a>
       </nav>
 
-      <div className="d-flex flex-wrap justify-content-between mb-4 gap-2">
-        <Button variant="success" onClick={handleShow}>ADD STOCK</Button>
-        <Button variant="primary" onClick={() => setShowTransferModal(true)}>TRANSFER STOCK</Button>
-        <Button variant="success" onClick={() => setShowDownloadModal(true)}>DOWNLOAD EXCEL</Button>
-        <Button variant="secondary" onClick={() => navigate(-1)}>BACK</Button>
+      <div className="d-flex justify-content-between my-4">
+        <Button variant="success" onClick={handleShow} className="px-4">
+          ADD STOCK
+        </Button>
+
+        <Button variant="primary" onClick={() => setShowTransferModal(true)} className="px-4">
+          TRANSFER STOCK
+        </Button>
+
+        <Button variant="success" onClick={() => setShowDownloadModal(true)} className="px-4">
+          DOWNLOAD EXCEL
+        </Button>
+
+        <Button variant="secondary" className="px-4" onClick={() => navigate(-1)}>
+          BACK
+        </Button>
       </div>
 
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h4 className="text-secondary">Stock for {selectedDate.toISOString().split("T")[0]}</h4>
+        <h2 className="text-secondary">
+          Stock for {selectedDate.toISOString().split("T")[0]}
+        </h2>
         <DatePicker
           selected={selectedDate}
-          onChange={setSelectedDate}
+          onChange={(date) => setSelectedDate(date)}
           className="form-control w-auto"
           dateFormat="yyyy-MM-dd"
         />
@@ -230,58 +263,110 @@ const Stock = () => {
             <div className="row mb-3">
               <div className="col-md-6">
                 <label className="form-label">Date</label>
-                <DatePicker selected={date} onChange={setDate} className="form-control" dateFormat="yyyy-MM-dd" />
+                <DatePicker
+                  selected={date}
+                  onChange={(d) => setDate(d)}
+                  className="form-control"
+                  dateFormat="yyyy-MM-dd"
+                />
               </div>
               <div className="col-md-6">
                 <label className="form-label">Supplier Name</label>
-                <input type="text" className="form-control" value={supplierName} onChange={(e) => setSupplierName(e.target.value)} placeholder="Enter supplier name" />
+                <input
+                  type="text"
+                  className="form-control"
+                  value={supplierName}
+                  onChange={(e) => setSupplierName(e.target.value)}
+                />
               </div>
             </div>
 
             <div className="mb-3">
               <label className="form-label">Stock Description</label>
-              <input type="text" className="form-control" value={stockDescription} onChange={(e) => setStockDescription(e.target.value)} placeholder="Enter stock description" />
+              <input
+                type="text"
+                className="form-control"
+                value={stockDescription}
+                onChange={(e) => setStockDescription(e.target.value)}
+              />
             </div>
 
             <div className="row mb-3">
               <div className="col-md-4">
                 <label className="form-label">Stock Quantity</label>
-                <input type="number" className="form-control" value={stockQuantity} onChange={(e) => setStockQuantity(e.target.value)} />
+                <input
+                  type="number"
+                  className="form-control"
+                  value={stockQuantity}
+                  onChange={(e) => setStockQuantity(e.target.value)}
+                />
               </div>
               <div className="col-md-4">
                 <label className="form-label">Transport Cost</label>
-                <input type="number" className="form-control" value={transportCost} onChange={(e) => setTransportCost(e.target.value)} />
+                <input
+                  type="number"
+                  className="form-control"
+                  value={transportCost}
+                  onChange={(e) => setTransportCost(e.target.value)}
+                />
               </div>
               <div className="col-md-4">
                 <label className="form-label">Buying Price</label>
-                <input type="number" className="form-control" value={buyingPrice} onChange={(e) => setBuyingPrice(e.target.value)} />
+                <input
+                  type="number"
+                  className="form-control"
+                  value={buyingPrice}
+                  onChange={(e) => setBuyingPrice(e.target.value)}
+                />
               </div>
             </div>
 
             <div className="row mb-3">
               <div className="col-md-4">
                 <label className="form-label">Selling Price</label>
-                <input type="number" className="form-control" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} />
+                <input
+                  type="number"
+                  className="form-control"
+                  value={sellingPrice}
+                  onChange={(e) => setSellingPrice(e.target.value)}
+                />
               </div>
               <div className="col-md-4">
                 <label className="form-label">Received By</label>
-                <input type="text" className="form-control" value={receivedBy} onChange={(e) => setReceivedBy(e.target.value)} />
+                <input
+                  type="text"
+                  className="form-control"
+                  value={receivedBy}
+                  onChange={(e) => setReceivedBy(e.target.value)}
+                />
               </div>
               <div className="col-md-4">
                 <label className="form-label">Stock Location</label>
-                <input type="text" className="form-control" value={stockLocation} onChange={(e) => setStockLocation(e.target.value)} />
+                <input
+                  type="text"
+                  className="form-control"
+                  value={stockLocation}
+                  onChange={(e) => setStockLocation(e.target.value)}
+                />
               </div>
             </div>
 
-            <Button type="button" variant="secondary" className="w-100 mb-3" onClick={handleAddItem}>
+            {/* Add to temp list */}
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-100 mb-3"
+              onClick={handleAddItem}
+            >
               ADD ITEM TO LIST
             </Button>
 
+            {/* Display temp items */}
             {tempStockItems.length > 0 && (
               <div className="mb-3">
-                <h5 className="mb-2">Items to be submitted:</h5>
+                <h5>Items to be submitted:</h5>
                 <table className="table table-bordered">
-                  <thead className="table-light">
+                  <thead>
                     <tr>
                       <th>Description</th>
                       <th>Quantity</th>
@@ -303,7 +388,9 @@ const Stock = () => {
               </div>
             )}
 
-            <Button type="submit" variant="primary" className="w-100 mt-2">FINALIZE ALL STOCK ITEMS</Button>
+            <Button variant="primary" type="submit" className="w-100 mt-2">
+              FINALIZE ALL STOCK ITEMS
+            </Button>
           </form>
         </Modal.Body>
       </Modal>
@@ -317,7 +404,11 @@ const Stock = () => {
           <form onSubmit={handleTransferStock}>
             <div className="mb-3">
               <label>Select Stock Item</label>
-              <select className="form-control" value={selectedStockItem} onChange={(e) => setSelectedStockItem(e.target.value)}>
+              <select
+                className="form-control"
+                value={selectedStockItem}
+                onChange={(e) => setSelectedStockItem(e.target.value)}
+              >
                 <option value="">--Select--</option>
                 {stockForm.map((item) => (
                   <option key={item._id} value={item._id}>
@@ -329,26 +420,43 @@ const Stock = () => {
 
             <div className="mb-3">
               <label>From Location</label>
-              <input type="text" className="form-control" value={fromLocation} onChange={(e) => setFromLocation(e.target.value)} />
+              <input
+                type="text"
+                className="form-control"
+                value={fromLocation}
+                onChange={(e) => setFromLocation(e.target.value)}
+              />
             </div>
 
             <div className="mb-3">
               <label>To Location</label>
-              <input type="text" className="form-control" value={toLocation} onChange={(e) => setToLocation(e.target.value)} />
+              <input
+                type="text"
+                className="form-control"
+                value={toLocation}
+                onChange={(e) => setToLocation(e.target.value)}
+              />
             </div>
 
             <div className="mb-3">
               <label>Transfer Quantity</label>
-              <input type="number" className="form-control" value={transferQuantity} onChange={(e) => setTransferQuantity(e.target.value)} />
+              <input
+                type="number"
+                className="form-control"
+                value={transferQuantity}
+                onChange={(e) => setTransferQuantity(e.target.value)}
+              />
             </div>
 
-            <Button type="submit" variant="primary" className="w-100">TRANSFER</Button>
+            <Button type="submit" variant="primary" className="w-100">
+              TRANSFER
+            </Button>
           </form>
         </Modal.Body>
       </Modal>
 
       {/* Stock Table */}
-      <table className="table table-striped table-bordered mt-4">
+      <table className="table table-striped table-bordered">
         <thead className="table-dark">
           <tr>
             <th>Date</th>
@@ -363,13 +471,13 @@ const Stock = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredStock.length ? (
-            filteredStock.map((stock, idx) => (
-              <tr key={idx}>
-                <td>{stock.date?.split("T")[0] || "N/A"}</td>
+          {filteredStock.length > 0 ? (
+            filteredStock.map((stock, index) => (
+              <tr key={index}>
+                <td>{stock.date ? stock.date.split("T")[0] : "N/A"}</td>
                 <td>{stock.supplierName || "N/A"}</td>
                 <td>{stock.stockDescription || "N/A"}</td>
-                <td>{stock.stockQuantity || "0"}</td>
+                <td>{stock.stockQuantity || "N/A"}</td>
                 <td>{stock.transportCost || "0.00"}</td>
                 <td>{stock.buyingPrice || "0.00"}</td>
                 <td>{stock.sellingPrice || "0.00"}</td>
@@ -379,7 +487,9 @@ const Stock = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="9" className="text-center">No stock records found for this date.</td>
+              <td colSpan="9" className="text-center">
+                No stock records found for this date.
+              </td>
             </tr>
           )}
         </tbody>
