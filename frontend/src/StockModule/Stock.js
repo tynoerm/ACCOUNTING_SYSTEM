@@ -4,6 +4,7 @@ import axios from "axios";
 import { Button, Modal } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import "bootstrap-icons/font/bootstrap-icons.css"; // for icons
 
 const Stock = () => {
   const [stockForm, setStockForm] = useState([]);
@@ -22,7 +23,7 @@ const Stock = () => {
   const [show, setShow] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  const [tempStockItems, setTempStockItems] = useState([]); // 🟢 Temporary items for multiple entry
+  const [tempStockItems, setTempStockItems] = useState([]); // Temporary items
 
   // Download modal states
   const [showDownloadModal, setShowDownloadModal] = useState(false);
@@ -254,119 +255,146 @@ const Stock = () => {
       {/* Add Stock Modal */}
       <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false} size="xl">
         <Modal.Header closeButton>
-          <Modal.Title>Add Stock (Multiple Items)</Modal.Title>
+          <Modal.Title className="fw-bold text-primary">Add Stock (Multiple Items)</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <form onSubmit={handleSubmitAll}>
-            {error && <div className="alert alert-danger">{error}</div>}
+            {error && (
+              <div className="alert alert-danger text-center">
+                <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                {error}
+              </div>
+            )}
 
+            {/* Supplier & Date */}
             <div className="row mb-3">
               <div className="col-md-6">
-                <label className="form-label">Date</label>
-                <DatePicker
-                  selected={date}
-                  onChange={(d) => setDate(d)}
-                  className="form-control"
-                  dateFormat="yyyy-MM-dd"
-                />
+                <div className="form-floating">
+                  <DatePicker
+                    selected={date}
+                    onChange={(d) => setDate(d)}
+                    className="form-control"
+                    dateFormat="yyyy-MM-dd"
+                  />
+                  <label>Date</label>
+                </div>
               </div>
               <div className="col-md-6">
-                <label className="form-label">Supplier Name</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={supplierName}
-                  onChange={(e) => setSupplierName(e.target.value)}
-                />
+                <div className="form-floating">
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={supplierName}
+                    onChange={(e) => setSupplierName(e.target.value)}
+                  />
+                  <label>Supplier Name</label>
+                </div>
               </div>
             </div>
 
+            {/* Stock Description */}
             <div className="mb-3">
-              <label className="form-label">Stock Description</label>
-              <input
-                type="text"
-                className="form-control"
-                value={stockDescription}
-                onChange={(e) => setStockDescription(e.target.value)}
-              />
-            </div>
-
-            <div className="row mb-3">
-              <div className="col-md-4">
-                <label className="form-label">Stock Quantity</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={stockQuantity}
-                  onChange={(e) => setStockQuantity(e.target.value)}
-                />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label">Transport Cost</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={transportCost}
-                  onChange={(e) => setTransportCost(e.target.value)}
-                />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label">Buying Price</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={buyingPrice}
-                  onChange={(e) => setBuyingPrice(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="row mb-3">
-              <div className="col-md-4">
-                <label className="form-label">Selling Price</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={sellingPrice}
-                  onChange={(e) => setSellingPrice(e.target.value)}
-                />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label">Received By</label>
+              <div className="form-floating">
                 <input
                   type="text"
                   className="form-control"
-                  value={receivedBy}
-                  onChange={(e) => setReceivedBy(e.target.value)}
+                  value={stockDescription}
+                  onChange={(e) => setStockDescription(e.target.value)}
                 />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label">Stock Location</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={stockLocation}
-                  onChange={(e) => setStockLocation(e.target.value)}
-                />
+                <label>Stock Description</label>
               </div>
             </div>
 
-            {/* Add to temp list */}
+            {/* Quantity, Transport, Buying Price */}
+            <div className="row mb-3">
+              <div className="col-md-4">
+                <div className="form-floating">
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={stockQuantity}
+                    onChange={(e) => setStockQuantity(e.target.value)}
+                  />
+                  <label>Stock Quantity</label>
+                </div>
+              </div>
+              <div className="col-md-4">
+                <div className="form-floating">
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={transportCost}
+                    onChange={(e) => setTransportCost(e.target.value)}
+                  />
+                  <label>Transport Cost</label>
+                </div>
+              </div>
+              <div className="col-md-4">
+                <div className="form-floating">
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={buyingPrice}
+                    onChange={(e) => setBuyingPrice(e.target.value)}
+                  />
+                  <label>Buying Price</label>
+                </div>
+              </div>
+            </div>
+
+            {/* Selling Price, Received By, Location */}
+            <div className="row mb-3">
+              <div className="col-md-4">
+                <div className="form-floating">
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={sellingPrice}
+                    onChange={(e) => setSellingPrice(e.target.value)}
+                  />
+                  <label>Selling Price</label>
+                </div>
+              </div>
+              <div className="col-md-4">
+                <div className="form-floating">
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={receivedBy}
+                    onChange={(e) => setReceivedBy(e.target.value)}
+                  />
+                  <label>Received By</label>
+                </div>
+              </div>
+              <div className="col-md-4">
+                <div className="form-floating">
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={stockLocation}
+                    onChange={(e) => setStockLocation(e.target.value)}
+                  />
+                  <label>Stock Location</label>
+                </div>
+              </div>
+            </div>
+
+            {/* Add to temporary list */}
             <Button
               type="button"
-              variant="secondary"
-              className="w-100 mb-3"
+              variant="outline-secondary"
+              className="w-100 mb-3 fw-bold"
               onClick={handleAddItem}
             >
-              ADD ITEM TO LIST
+              <i className="bi bi-plus-circle me-2"></i> Add Item to List
             </Button>
 
-            {/* Display temp items */}
+            {/* Temporary Items Table */}
             {tempStockItems.length > 0 && (
-              <div className="mb-3">
-                <h5>Items to be submitted:</h5>
-                <table className="table table-bordered">
-                  <thead>
+              <div className="mb-3 p-3 border rounded bg-light">
+                <h5 className="text-primary fw-bold">Items to be Submitted</h5>
+                <table className="table table-hover table-bordered mt-2">
+                  <thead className="table-secondary">
                     <tr>
                       <th>Description</th>
                       <th>Quantity</th>
@@ -388,8 +416,8 @@ const Stock = () => {
               </div>
             )}
 
-            <Button variant="primary" type="submit" className="w-100 mt-2">
-              FINALIZE ALL STOCK ITEMS
+            <Button variant="primary" type="submit" className="w-100 fw-bold">
+              <i className="bi bi-check2-circle me-2"></i> Finalize All Stock Items
             </Button>
           </form>
         </Modal.Body>
