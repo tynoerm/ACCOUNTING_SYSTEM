@@ -33,14 +33,12 @@ router.route("/").get(async (req, res, next) => {
     .catch((err) => next(err));
 });
 
-// 🟢 Excel Export by Date
 router.get("/download/excel", async (req, res) => {
   try {
     const { date } = req.query;
 
     let query = {};
     if (date) {
-      // Filter stocks matching the selected date only
       const start = new Date(date);
       const end = new Date(date);
       end.setHours(23, 59, 59, 999);
@@ -81,18 +79,23 @@ router.get("/download/excel", async (req, res) => {
     worksheet.getRow(1).font = { bold: true };
     worksheet.getRow(1).alignment = { horizontal: "center" };
 
-    res.setHeader("Content-Disposition", 'attachment; filename="stock_report.xlsx"');
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="stock_report_${date || "all"}.xlsx"`
+    );
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
 
-    await workbook.xlsx.write(res);
-    res.end();
+    res.send(buffer);
   } catch (error) {
     console.error(error);
     res.status(500).send("Error generating Excel file");
   }
 });
+
 
 export { router as stocksRoutes };
