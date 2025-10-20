@@ -16,30 +16,28 @@ const Stock = () => {
   const [buyingPrice, setBuyingPrice] = useState("");
   const [sellingPrice, setSellingPrice] = useState("");
   const [receivedBy, setReceivedBy] = useState("");
-  const [stockLocation, setStockLocation] = useState(""); // 🆕 stock location
+  const [stockLocation, setStockLocation] = useState("");
   const [error, setError] = useState("");
 
   const [show, setShow] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // 🆕 Download modal states
+  const [tempStockItems, setTempStockItems] = useState([]); // 🟢 Temporary items for multiple entry
+
+  // Download modal states
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [downloadDate, setDownloadDate] = useState(new Date());
 
-  // 🆕 Transfer modal states
+  // Transfer modal states
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [fromLocation, setFromLocation] = useState("");
   const [toLocation, setToLocation] = useState("");
   const [transferQuantity, setTransferQuantity] = useState("");
   const [selectedStockItem, setSelectedStockItem] = useState("");
 
-  const role = localStorage.getItem("role");
-  const storename = localStorage.getItem("storename");
-  const username = localStorage.getItem("username");
-
   const navigate = useNavigate();
 
-  // ✅ Load stock data
+  // Load stock data
   useEffect(() => {
     axios
       .get("https://accounting-system-1.onrender.com/stock/")
@@ -55,22 +53,25 @@ const Stock = () => {
   });
 
   const handleShow = () => setShow(true);
-  const handleClose = () => setShow(false);
-
-  const handleDownloadShow = () => {
-    setDownloadDate(selectedDate || new Date());
-    setShowDownloadModal(true);
+  const handleClose = () => {
+    setShow(false);
+    setTempStockItems([]);
+    clearFormFields();
+    setError("");
   };
 
-  const handleDownloadClose = () => setShowDownloadModal(false);
+  const clearFormFields = () => {
+    setStockDescription("");
+    setStockQuantity("");
+    setTransportCost("");
+    setBuyingPrice("");
+    setSellingPrice("");
+    setReceivedBy("");
+    setStockLocation("");
+  };
 
-  const handleTransferShow = () => setShowTransferModal(true);
-  const handleTransferClose = () => setShowTransferModal(false);
-
-  // 🟢 Save Stock
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
+  // Add single item to temporary list
+  const handleAddItem = () => {
     if (
       !date ||
       !supplierName ||
@@ -115,9 +116,7 @@ const Stock = () => {
       return;
     }
 
-    setError("");
-
-    const stockInsert = {
+    const newItem = {
       date: date.toISOString().split("T")[0],
       supplierName,
       stockDescription,
@@ -126,31 +125,37 @@ const Stock = () => {
       buyingPrice,
       sellingPrice,
       receivedBy,
-      stockLocation, // 🆕 included location
+      stockLocation,
     };
 
-    axios
-      .post("https://accounting-system-1.onrender.com/stock/create-stock", stockInsert)
-      .then(() => {
-        setStockForm((prev) => [...prev, stockInsert]);
-        setDate(new Date());
-        setSupplierName("");
-        setStockDescription("");
-        setStockQuantity("");
-        setTransportCost("");
-        setBuyingPrice("");
-        setSellingPrice("");
-        setReceivedBy("");
-        setStockLocation("");
-        setShow(false);
-      })
-      .catch((error) => {
-        console.error(error);
-        setError("An error occurred while saving the batch.");
-      });
+    setTempStockItems([...tempStockItems, newItem]);
+    clearFormFields();
+    setError("");
   };
 
-  // 🟡 Excel Download
+  // Submit all temporary items to backend
+  const handleSubmitAll = async (e) => {
+    e.preventDefault();
+    if (tempStockItems.length === 0) {
+      setError("Add at least one stock item before submitting");
+      return;
+    }
+
+    try {
+      await axios.post(
+        "https://accounting-system-1.onrender.com/stock/create-stock",
+        tempStockItems
+      );
+      setStockForm([...stockForm, ...tempStockItems]);
+      setTempStockItems([]);
+      handleClose();
+    } catch (err) {
+      console.error(err);
+      setError("Error submitting stock items");
+    }
+  };
+
+  // Excel download
   const handleExcelDownload = async () => {
     if (!downloadDate) {
       alert("Please select a date first.");
@@ -171,15 +176,14 @@ const Stock = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
-      handleDownloadClose();
+      setShowDownloadModal(false);
     } catch (error) {
       console.error("Error downloading file:", error);
       alert("Error downloading Excel. Check console for details.");
     }
   };
 
-  // 🆕 Transfer Stock
+  // Transfer stock
   const handleTransferStock = async (e) => {
     e.preventDefault();
 
@@ -222,11 +226,11 @@ const Stock = () => {
           ADD STOCK
         </Button>
 
-        <Button variant="primary" onClick={handleTransferShow} className="px-4">
+        <Button variant="primary" onClick={() => setShowTransferModal(true)} className="px-4">
           TRANSFER STOCK
         </Button>
 
-        <Button variant="success" onClick={handleDownloadShow} className="px-4">
+        <Button variant="success" onClick={() => setShowDownloadModal(true)} className="px-4">
           DOWNLOAD EXCEL
         </Button>
 
@@ -250,10 +254,10 @@ const Stock = () => {
       {/* Add Stock Modal */}
       <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false} size="xl">
         <Modal.Header closeButton>
-          <Modal.Title>Add Stock</Modal.Title>
+          <Modal.Title>Add Stock (Multiple Items)</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmitAll}>
             {error && <div className="alert alert-danger">{error}</div>}
 
             <div className="row mb-3">
@@ -347,15 +351,52 @@ const Stock = () => {
               </div>
             </div>
 
-            <Button variant="primary" type="submit" className="w-100 mt-4">
-              FINALIZE STOCK
+            {/* Add to temp list */}
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-100 mb-3"
+              onClick={handleAddItem}
+            >
+              ADD ITEM TO LIST
+            </Button>
+
+            {/* Display temp items */}
+            {tempStockItems.length > 0 && (
+              <div className="mb-3">
+                <h5>Items to be submitted:</h5>
+                <table className="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Description</th>
+                      <th>Quantity</th>
+                      <th>Location</th>
+                      <th>Received By</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tempStockItems.map((item, idx) => (
+                      <tr key={idx}>
+                        <td>{item.stockDescription}</td>
+                        <td>{item.stockQuantity}</td>
+                        <td>{item.stockLocation}</td>
+                        <td>{item.receivedBy}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <Button variant="primary" type="submit" className="w-100 mt-2">
+              FINALIZE ALL STOCK ITEMS
             </Button>
           </form>
         </Modal.Body>
       </Modal>
 
       {/* Transfer Stock Modal */}
-      <Modal show={showTransferModal} onHide={handleTransferClose} centered>
+      <Modal show={showTransferModal} onHide={() => setShowTransferModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Transfer Stock</Modal.Title>
         </Modal.Header>
@@ -414,7 +455,7 @@ const Stock = () => {
         </Modal.Body>
       </Modal>
 
-      {/* Table */}
+      {/* Stock Table */}
       <table className="table table-striped table-bordered">
         <thead className="table-dark">
           <tr>
