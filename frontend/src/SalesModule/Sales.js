@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-// Toast notification component
+// ✅ Toast notification
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
-    const timer = setTimeout(onClose, 3000); // Auto-close after 3s
+    const timer = setTimeout(onClose, 3000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
@@ -21,6 +21,7 @@ const Toast = ({ message, type, onClose }) => {
         borderRadius: "8px",
         boxShadow: "0px 0px 10px rgba(0,0,0,0.3)",
         zIndex: 9999,
+        fontWeight: "500",
       }}
     >
       {message}
@@ -29,67 +30,108 @@ const Toast = ({ message, type, onClose }) => {
 };
 
 const Sales = () => {
-  const [salesForm, setSalesForm] = useState([]);
+  const [items, setItems] = useState([]);
   const [date, setDate] = useState("");
   const [customerName, setCustomerName] = useState("");
-  const [itemDescription, setItemDescription] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [currency, setCurrency] = useState("");
   const [balance, setBalance] = useState("");
+
+  // Single item fields
+  const [itemDescription, setItemDescription] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("");
   const [unitPrice, setUnitPrice] = useState("");
   const [vat, setVat] = useState("");
-  const [totalPrice, setTotalPrice] = useState("");
+
+  // Stock items from DB
+  const [stockItems, setStockItems] = useState([]);
 
   const [notification, setNotification] = useState(null);
-
   const navigate = useNavigate();
   const username = localStorage.getItem("username");
 
-  // Calculate total price whenever quantity, unitPrice or VAT changes
-  useEffect(() => {
-    const q = parseFloat(quantity) || 0;
-    const u = parseFloat(unitPrice) || 0;
-    const v = parseFloat(vat) || 0;
-    const base = q * u;
-    const total = base + (v / 100) * base;
-    setTotalPrice(total.toFixed(2));
-  }, [quantity, unitPrice, vat]);
+  const subtotal = items.reduce((acc, item) => acc + item.totalPrice, 0);
+  const vatAmount = items.reduce(
+    (acc, item) => acc + (item.totalPrice * (item.vat || 0)) / 100,
+    0
+  );
+  const grandTotal = subtotal + vatAmount;
 
-  const showNotification = (message, type = "success") => {
+  const showNotification = (message, type = "success") =>
     setNotification({ message, type });
+
+  const clearItemFields = () => {
+    setItemDescription("");
+    setQuantity("");
+    setUnitPrice("");
+    setVat("");
   };
 
+  // 🔹 Fetch stock items
+  useEffect(() => {
+    axios
+      .get("https://accounting-system-1.onrender.com/salesmodel/get-stock-items")
+      .then((res) => setStockItems(res.data))
+      .catch((err) => console.error("Error fetching stock:", err));
+  }, []);
+
+  // 🔹 Select item -> set description & unit price
+  const handleItemSelect = (e) => {
+    const selectedId = e.target.value;
+    setItemDescription(selectedId);
+
+    const selectedItem = stockItems.find((item) => item._id === selectedId);
+    if (selectedItem) {
+      setUnitPrice(selectedItem.unitPrice || 0);
+    } else {
+      setUnitPrice("");
+    }
+  };
+
+  // ➕ Add item to list
+  const handleAddItem = (e) => {
+    e.preventDefault();
+    if (!itemDescription || !quantity || !unitPrice) {
+      showNotification("Fill in all item fields before adding.", "error");
+      return;
+    }
+
+    const selectedItem = stockItems.find((item) => item._id === itemDescription);
+    const descriptionText = selectedItem ? selectedItem.itemName : "";
+
+    const q = parseFloat(quantity);
+    const u = parseFloat(unitPrice);
+    const v = parseFloat(vat) || 0;
+    const base = q * u;
+
+    const newItem = {
+      itemDescription: descriptionText,
+      quantity: q,
+      unitPrice: u,
+      vat: v,
+      totalPrice: base,
+    };
+
+    setItems((prev) => [...prev, newItem]);
+    clearItemFields();
+  };
+
+  const handleRemoveItem = (index) => {
+    const updatedItems = [...items];
+    updatedItems.splice(index, 1);
+    setItems(updatedItems);
+  };
+
+  // 💾 Submit Sale
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validation
-    if (!date || !customerName || !itemDescription || !currency || !paymentMethod) {
+    if (!date || !customerName || !paymentMethod || !currency) {
       showNotification("All required fields must be filled.", "error");
       return;
     }
-
-    if (isNaN(quantity) || quantity <= 0) {
-      showNotification("Quantity must be a positive number.", "error");
-      return;
-    }
-
-    if (isNaN(unitPrice) || unitPrice <= 0) {
-      showNotification("Unit Price must be a positive number.", "error");
-      return;
-    }
-
-    // Duplicate check: date + customer + item + totalPrice
-    const isDuplicate = salesForm.some(
-      (sale) =>
-        sale.date === date &&
-        sale.customerName.toLowerCase() === customerName.toLowerCase() &&
-        sale.itemDescription.toLowerCase() === itemDescription.toLowerCase() &&
-        Number(sale.totalPrice) === Number(totalPrice)
-    );
-
-    if (isDuplicate) {
-      showNotification("Duplicate sale detected! Entry not saved.", "error");
+    if (items.length === 0) {
+      showNotification("Add at least one item to the sale.", "error");
       return;
     }
 
@@ -97,34 +139,27 @@ const Sales = () => {
       date,
       cashierName: username,
       customerName,
-      itemDescription,
       paymentMethod,
       currency,
       balance: parseFloat(balance) || 0,
-      quantity: parseFloat(quantity),
-      unitPrice: parseFloat(unitPrice),
-      vat: parseFloat(vat) || 0,
-      totalPrice: parseFloat(totalPrice),
+      items,
+      subtotal: subtotal.toFixed(2),
+      vatAmount: vatAmount.toFixed(2),
+      grandTotal: grandTotal.toFixed(2),
     };
 
     axios
       .post("https://accounting-system-1.onrender.com/salesmodel/create-sale", saleData)
-      .then((res) => {
-        setSalesForm((prev) => [...prev, saleData]);
-
-        showNotification(`✅ Sale saved! Total: ${totalPrice} ${currency}`);
-
-      
+      .then(() => {
+        showNotification(
+          `✅ Sale completed! Total: ${grandTotal.toFixed(2)} ${currency}`
+        );
+        setItems([]);
         setDate("");
         setCustomerName("");
-        setItemDescription("");
+        setPaymentMethod("");
         setCurrency("");
         setBalance("");
-        setQuantity("");
-        setPaymentMethod("");
-        setUnitPrice("");
-        setVat("");
-        setTotalPrice("");
       })
       .catch((err) => {
         console.error(err);
@@ -145,84 +180,197 @@ const Sales = () => {
       )}
 
       <nav className="navbar bg-dark border-bottom py-3 mb-3 shadow-sm rounded">
-        <a className="navbar-brand text-white"><b>CREATE A SALE</b></a>
+        <a className="navbar-brand text-white ms-3">
+          <b>POINT OF SALE SYSTEM</b>
+        </a>
       </nav>
 
-      <div className="d-flex justify-content-end mb-3">
-        <button onClick={() => navigate(-1)} className="btn btn-secondary">BACK</button>
+      <div className="d-flex justify-content-end mb-3 mx-3">
+        <button onClick={() => navigate(-1)} className="btn btn-secondary">
+          ⬅ BACK
+        </button>
       </div>
 
-      <div className="card mx-auto shadow-lg" style={{ maxWidth: "90rem", marginTop: "1rem" }}>
+      <div className="card mx-auto shadow-lg mb-4" style={{ maxWidth: "90rem" }}>
         <div className="card-body">
-          <p>SALES FORM</p>
+          <p className="h5 mb-4 text-primary fw-bold">🧾 Sale Information</p>
+
           <form onSubmit={handleSubmit}>
-            <div className="d-flex gap-3 mb-3">
-              <div className="form-group flex-1">
+            {/* General Info */}
+            <div className="row mb-3">
+              <div className="col-md-3">
                 <label>Date</label>
-                <input type="date" className="form-control" value={date} onChange={(e) => setDate(e.target.value)} />
+                <input
+                  type="date"
+                  className="form-control"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                />
               </div>
-              <div className="form-group flex-1">
-                <label>Cashier Name</label>
+              <div className="col-md-3">
+                <label>Cashier</label>
                 <input type="text" className="form-control" value={username} disabled />
               </div>
+              <div className="col-md-3">
+                <label>Customer Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                />
+              </div>
+              <div className="col-md-3">
+                <label>Balance</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={balance}
+                  onChange={(e) => setBalance(e.target.value)}
+                />
+              </div>
             </div>
 
-            <div className="form-group mb-3">
-              <label>Customer Name</label>
-              <input type="text" className="form-control" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
-            </div>
-
-            <div className="form-group mb-3">
-              <label>Item Description</label>
-              <textarea className="form-control" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} />
-            </div>
-
-            <div className="d-flex gap-3 flex-wrap mb-3">
-              <div className="form-group flex-1">
+            {/* Payment Info */}
+            <div className="row mb-3">
+              <div className="col-md-3">
                 <label>Payment Option</label>
-                <select className="form-control" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
-                  <option defaultValue>Choose...</option>
+                <select
+                  className="form-control"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                >
+                  <option value="">Choose...</option>
                   <option>Cash</option>
                   <option>Ecocash USD</option>
-                  <option>Ecocash ZIG</option>
-                  <option>Zig Swipe</option>
-                </select>
-              </div>
-              <div className="form-group flex-1">
-                <label>Currency</label>
-                <select className="form-control" value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                  <option defaultValue>Choose...</option>
-                  <option>USD</option>
-                  <option>ZWL</option>
                 </select>
               </div>
             </div>
 
-            <div className="d-flex gap-3 mb-3 justify-content-end flex-wrap">
-              <div className="form-group" style={{ flexBasis: "200px" }}>
-                <label>Balance</label>
-                <input type="number" className="form-control" value={balance} onChange={(e) => setBalance(e.target.value)} />
+            {/* 🛒 Item Section */}
+            <hr />
+            <p className="fw-bold text-secondary">Add Items</p>
+            <div className="row mb-3">
+              <div className="col-md-4">
+                <label>Item Description</label>
+                <select
+                  className="form-control"
+                  value={itemDescription}
+                  onChange={handleItemSelect}
+                >
+                  <option value="">Select item...</option>
+                  {stockItems.map((stock) => (
+                    <option key={stock._id} value={stock._id}>
+                      {stock.itemName} (Stock: {stock.quantity})
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="form-group" style={{ flexBasis: "200px" }}>
+              <div className="col-md-2">
                 <label>Quantity</label>
-                <input type="number" className="form-control" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+                <input
+                  type="number"
+                  className="form-control"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                />
               </div>
-              <div className="form-group" style={{ flexBasis: "200px" }}>
+              <div className="col-md-2">
                 <label>Unit Price</label>
-                <input type="number" className="form-control" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} />
+                <input
+                  type="number"
+                  className="form-control"
+                  value={unitPrice}
+                  onChange={(e) => setUnitPrice(e.target.value)}
+                />
               </div>
-              <div className="form-group" style={{ flexBasis: "200px" }}>
+              <div className="col-md-2">
                 <label>VAT (%)</label>
-                <input type="number" className="form-control" value={vat} onChange={(e) => setVat(e.target.value)} />
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="0 if none"
+                  value={vat}
+                  onChange={(e) => setVat(e.target.value)}
+                />
               </div>
-              <div className="form-group" style={{ flexBasis: "200px" }}>
-                <label>Total Price</label>
-                <input type="number" className="form-control" value={totalPrice} readOnly />
+              <div className="col-md-2 d-flex align-items-end">
+                <button className="btn btn-success w-100" onClick={handleAddItem}>
+                  ➕ Add Item
+                </button>
               </div>
             </div>
 
-            <button type="submit" className="btn btn-success mt-3">SAVE SALE</button>
-            <button type="button" onClick={handleFinalize} className="btn btn-primary mt-3 ms-3">FINALIZE</button>
+            {/* 🧾 Items Table */}
+            {items.length > 0 && (
+              <div className="table-responsive mb-4">
+                <table className="table table-striped table-bordered">
+                  <thead className="table-dark">
+                    <tr>
+                      <th>#</th>
+                      <th>Description</th>
+                      <th>Qty</th>
+                      <th>Unit Price</th>
+                      <th>VAT (%)</th>
+                      <th>Total</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item, index) => (
+                      <tr key={index}>
+                        <td>{index + 1}</td>
+                        <td>{item.itemDescription}</td>
+                        <td>{item.quantity}</td>
+                        <td>{item.unitPrice.toFixed(2)}</td>
+                        <td>{item.vat || 0}</td>
+                        <td>
+                          {(
+                            item.totalPrice +
+                            ((item.vat || 0) / 100) * item.totalPrice
+                          ).toFixed(2)}
+                        </td>
+                        <td>
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleRemoveItem(index)}
+                          >
+                            🗑
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* 💰 Totals */}
+            <div className="d-flex justify-content-end gap-4 mb-4">
+              <div>
+                <p className="mb-1 fw-bold">Subtotal:</p>
+                <p className="mb-1 fw-bold">VAT:</p>
+                <p className="mb-1 fw-bold text-primary">Grand Total:</p>
+              </div>
+              <div className="text-end">
+                <p className="mb-1">{subtotal.toFixed(2)} {currency}</p>
+                <p className="mb-1">{vatAmount.toFixed(2)} {currency}</p>
+                <p className="mb-1 text-primary fw-bold fs-5">
+                  {grandTotal.toFixed(2)} {currency}
+                </p>
+              </div>
+            </div>
+
+            <button type="submit" className="btn btn-success">
+              💾 SAVE SALE
+            </button>
+            <button
+              type="button"
+              onClick={handleFinalize}
+              className="btn btn-primary ms-3"
+            >
+              ✅ PRINT
+            </button>
           </form>
         </div>
       </div>
