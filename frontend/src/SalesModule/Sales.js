@@ -3,7 +3,7 @@ import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-const AccountingDashboard = () => {
+const  SalesReports = () => {
   const [sales, setSales] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [stock, setStock] = useState([]);
@@ -132,4 +132,5 @@ const AccountingDashboard = () => {
   );
 };
 
-export default AccountingDashboard;
+export default SalesReports;
+
