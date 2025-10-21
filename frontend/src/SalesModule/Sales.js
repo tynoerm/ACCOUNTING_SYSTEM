@@ -31,7 +31,13 @@ const Toast = ({ message, type, onClose }) => {
 
 const Sales = () => {
   const [items, setItems] = useState([]);
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(() => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  });
   const [customerName, setCustomerName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [currency, setCurrency] = useState("");
@@ -42,9 +48,6 @@ const Sales = () => {
   const [quantity, setQuantity] = useState("");
   const [unitPrice, setUnitPrice] = useState("");
   const [vat, setVat] = useState("");
-
-  // Stock items from DB
-  const [stockItems, setStockItems] = useState([]);
 
   const [notification, setNotification] = useState(null);
   const navigate = useNavigate();
@@ -67,27 +70,6 @@ const Sales = () => {
     setVat("");
   };
 
-  // 🔹 Fetch stock items
-  useEffect(() => {
-    axios
-      .get("https://accounting-system-1.onrender.com/salesmodel/get-stock-items")
-      .then((res) => setStockItems(res.data))
-      .catch((err) => console.error("Error fetching stock:", err));
-  }, []);
-
-  // 🔹 Select item -> set description & unit price
-  const handleItemSelect = (e) => {
-    const selectedId = e.target.value;
-    setItemDescription(selectedId);
-
-    const selectedItem = stockItems.find((item) => item._id === selectedId);
-    if (selectedItem) {
-      setUnitPrice(selectedItem.unitPrice || 0);
-    } else {
-      setUnitPrice("");
-    }
-  };
-
   // ➕ Add item to list
   const handleAddItem = (e) => {
     e.preventDefault();
@@ -96,16 +78,13 @@ const Sales = () => {
       return;
     }
 
-    const selectedItem = stockItems.find((item) => item._id === itemDescription);
-    const descriptionText = selectedItem ? selectedItem.itemName : "";
-
     const q = parseFloat(quantity);
     const u = parseFloat(unitPrice);
     const v = parseFloat(vat) || 0;
     const base = q * u;
 
     const newItem = {
-      itemDescription: descriptionText,
+      itemDescription: itemDescription,
       quantity: q,
       unitPrice: u,
       vat: v,
@@ -155,7 +134,13 @@ const Sales = () => {
           `✅ Sale completed! Total: ${grandTotal.toFixed(2)} ${currency}`
         );
         setItems([]);
-        setDate("");
+        setDate(() => {
+          const today = new Date();
+          const yyyy = today.getFullYear();
+          const mm = String(today.getMonth() + 1).padStart(2, "0");
+          const dd = String(today.getDate()).padStart(2, "0");
+          return `${yyyy}-${mm}-${dd}`;
+        });
         setCustomerName("");
         setPaymentMethod("");
         setCurrency("");
@@ -253,18 +238,13 @@ const Sales = () => {
             <div className="row mb-3">
               <div className="col-md-4">
                 <label>Item Description</label>
-                <select
+                <input
+                  type="text"
                   className="form-control"
+                  placeholder="Enter item description"
                   value={itemDescription}
-                  onChange={handleItemSelect}
-                >
-                  <option value="">Select item...</option>
-                  {stockItems.map((stock) => (
-                    <option key={stock._id} value={stock._id}>
-                      {stock.itemName} (Stock: {stock.quantity})
-                    </option>
-                  ))}
-                </select>
+                  onChange={(e) => setItemDescription(e.target.value)}
+                />
               </div>
               <div className="col-md-2">
                 <label>Quantity</label>
