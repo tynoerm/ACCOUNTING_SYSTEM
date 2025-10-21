@@ -11,21 +11,31 @@ const SalesReports = () => {
 
   // ✅ Get Sales and Expenses
   useEffect(() => {
-    axios.get("https://accounting-system-1.onrender.com/salesmodel")
-      .then((res) => setSalesReportsForm(res.data.data))
+    axios.get("https://accounting-system-1.onrender.com/salesmodel/get-sales")
+      .then((res) => setSalesReportsForm(res.data)) // fix: res.data instead of res.data.data
       .catch((error) => console.log(error));
 
-    axios.get("https://accounting-system-1.onrender.com/expenses")
-      .then((res) => setExpenses(res.data.data))
+    axios.get("https://accounting-system-1.onrender.com/salesmodel/get-expenses")
+      .then((res) => setExpenses(res.data)) // fix: res.data instead of res.data.data
       .catch((error) => console.log(error));
   }, []);
 
   // ✅ Filter sales by selected date and user
-  const filteredSales = salesReportsForm.filter(q => {
-    const dateMatch = q.date ? new Date(q.date).toISOString().split("T")[0] === selectedDate : false;
-    const userMatch = selectedUser ? q.cashierName === selectedUser : true;
-    return dateMatch && userMatch;
-  });
+  const filteredSales = salesReportsForm
+    .filter(sale => {
+      const dateMatch = sale.date ? new Date(sale.date).toISOString().split("T")[0] === selectedDate : false;
+      const userMatch = selectedUser ? sale.cashierName === selectedUser : true;
+      return dateMatch && userMatch;
+    })
+    .flatMap(sale => 
+      sale.items.map(item => ({
+        ...item,
+        date: sale.date,
+        cashierName: sale.cashierName,
+        customerName: sale.customerName,
+        currency: sale.currency
+      }))
+    );
 
   // ✅ Filter expenses by selected date
   const filteredExpenses = expenses.filter(e => {
@@ -36,20 +46,20 @@ const SalesReports = () => {
   const uniqueUsers = [...new Set(salesReportsForm.map(s => s.cashierName).filter(Boolean))];
 
   // ✅ Totals
-  const totalSales = filteredSales.reduce((acc, item) => acc + (item.totalPrice || 0), 0);
+  const totalSales = filteredSales.reduce((acc, item) => acc + (item.totalPrice + (item.vat || 0)/100 * item.totalPrice), 0);
   const totalExpenses = filteredExpenses.reduce((acc, item) => acc + (item.amount || 0), 0);
 
   const handleDownload = async (type) => {
     try {
       const response = await axios.get(
-        `https://accounting-system-1.onrender.com/salesmodel/download/${type}?date=${selectedDate}&user=${selectedUser}`,
+        `https://accounting-system-1.onrender.com/salesmodel/export-report`,
         { responseType: "blob" }
       );
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `sales_report.${type}`);
+      link.setAttribute("download", `sales_report.${type === "excel" ? "xlsx" : "pdf"}`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -125,9 +135,9 @@ const SalesReports = () => {
                 <td>{sale.itemDescription || "N/A"}</td>
                 <td>{sale.currency || "N/A"}</td>
                 <td>{sale.quantity || "0"}</td>
-                <td>{sale.unitPrice || "0.00"}</td>
-                <td>{sale.vat || "0.00"}</td>
-                <td>{sale.totalPrice || "0.00"}</td>
+                <td>{sale.unitPrice?.toFixed(2) || "0.00"}</td>
+                <td>{sale.vat?.toFixed(2) || "0.00"}</td>
+                <td>{((sale.totalPrice + ((sale.vat || 0)/100 * sale.totalPrice))).toFixed(2)}</td>
               </tr>
             ))
           ) : (
