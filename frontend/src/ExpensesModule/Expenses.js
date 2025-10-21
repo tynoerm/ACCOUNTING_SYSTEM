@@ -33,11 +33,10 @@ const Notification = ({ message, type, onClose }) => {
 
 const Expenses = () => {
   const [expensesForm, setExpensesForm] = useState([]);
-  const [tempExpenses, setTempExpenses] = useState([]); // 🆕 temp list for batch input
+  const [tempExpenses, setTempExpenses] = useState([]);
   const [show, setShow] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [downloadDate, setDownloadDate] = useState("");
-  const [date, setDate] = useState("");
   const [issuedTo, setIssuedTo] = useState("");
   const [description, setDescription] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -48,6 +47,9 @@ const Expenses = () => {
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+
+  // Date is fixed to today
+  const [date] = useState(new Date().toISOString().split("T")[0]);
 
   const navigate = useNavigate();
   const userRole = localStorage.getItem("role");
@@ -82,11 +84,11 @@ const Expenses = () => {
     setNotification({ message, type });
   };
 
-  // 🆕 Add to list (not saving yet)
+  // Add to list
   const handleAddToList = (e) => {
     e.preventDefault();
 
-    if (!date || !issuedTo || !description || !paymentMethod || !expenseType || !amount || !authorisedBy) {
+    if (!issuedTo || !description || !paymentMethod || !expenseType || !amount || !authorisedBy) {
       showNotification("All fields are required.", "error");
       return;
     }
@@ -99,7 +101,6 @@ const Expenses = () => {
     const newExpense = { date, issuedTo, description, paymentMethod, expenseType, amount, authorisedBy };
 
     setTempExpenses((prev) => [...prev, newExpense]);
-    setDate("");
     setIssuedTo("");
     setDescription("");
     setPaymentMethod("");
@@ -108,7 +109,7 @@ const Expenses = () => {
     setAuthorisedBy("");
   };
 
-  // 🆕 Finalize and send all at once
+  // Finalize and save all
   const handleFinalizeAll = async () => {
     if (tempExpenses.length < 1) {
       showNotification("No expenses to finalize!", "error");
@@ -215,15 +216,6 @@ const Expenses = () => {
         <Modal.Body>
           <form onSubmit={handleAddToList}>
             <div className="row mb-3">
-              <div className="col-md-6">
-                <label className="form-label">Date</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
-              </div>
               <div className="col-md-6">
                 <label className="form-label">Issued To:</label>
                 <input
