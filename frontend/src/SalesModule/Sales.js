@@ -341,15 +341,13 @@ const Sales = () => {
               </div>
             </div>
 
-            <button type="submit" className="btn btn-success">
-              💾 SAVE SALE
-            </button>
+         
             <button
               type="button"
-              onClick={handleFinalize}
+              onClick={handleSubmit}
               className="btn btn-primary ms-3"
             >
-              ✅ PRINT
+              ✅ SAVE
             </button>
           </form>
         </div>
@@ -359,3 +357,4 @@ const Sales = () => {
 };
 
 export default Sales;
+
