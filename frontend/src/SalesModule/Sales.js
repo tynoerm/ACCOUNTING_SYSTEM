@@ -1,244 +1,135 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
-// ✅ Toast notification component
-const Toast = ({ message, type, onClose }) => {
+const AccountingDashboard = () => {
+  const [sales, setSales] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [stock, setStock] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // Fetch sales
   useEffect(() => {
-    const timer = setTimeout(onClose, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
+    axios.get("https://accounting-system-1.onrender.com/api/sales/get-sales")
+      .then(res => setSales(res.data))
+      .catch(err => console.error(err));
+
+    axios.get("https://accounting-system-1.onrender.com/api/sales/get-expenses")
+      .then(res => setExpenses(res.data))
+      .catch(err => console.error(err));
+
+    axios.get("https://accounting-system-1.onrender.com/api/sales/get-stock-items")
+      .then(res => setStock(res.data))
+      .catch(err => console.error(err));
+  }, []);
+
+  const filteredSales = sales.filter(sale => {
+    const saleDate = sale.date ? new Date(sale.date).toISOString().split("T")[0] : "";
+    const selected = selectedDate.toISOString().split("T")[0];
+    return saleDate === selected;
+  });
+
+  const filteredExpenses = expenses.filter(exp => {
+    const expDate = exp.date ? new Date(exp.date).toISOString().split("T")[0] : "";
+    const selected = selectedDate.toISOString().split("T")[0];
+    return expDate === selected;
+  });
+
+  const handleExport = () => {
+    window.open("https://accounting-system-1.onrender.com/api/sales/export-report");
+  };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: "20px",
-        right: "20px",
-        backgroundColor: type === "error" ? "#f8d7da" : "#d1e7dd",
-        color: type === "error" ? "#842029" : "#0f5132",
-        padding: "15px 25px",
-        borderRadius: "8px",
-        boxShadow: "0px 0px 10px rgba(0,0,0,0.3)",
-        zIndex: 9999,
-        fontWeight: "500",
-      }}
-    >
-      {message}
+    <div className="container mt-4">
+      <h2>Accounting Dashboard</h2>
+      <div className="mb-3">
+        <label>Select Date:</label>
+        <DatePicker
+          selected={selectedDate}
+          onChange={d => setSelectedDate(d)}
+          className="form-control w-auto"
+          dateFormat="yyyy-MM-dd"
+        />
+      </div>
+
+      <button className="btn btn-success mb-4" onClick={handleExport}>
+        Export Sales & Expenses Excel
+      </button>
+
+      <h4>Sales ({filteredSales.length})</h4>
+      <table className="table table-striped">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredSales.map((sale, i) => sale.items.map((item, idx) => (
+            <tr key={`${i}-${idx}`}>
+              <td>{sale.date?.split("T")[0]}</td>
+              <td>{sale.customerName}</td>
+              <td>{item.itemDescription}</td>
+              <td>{item.quantity}</td>
+              <td>{item.unitPrice}</td>
+              <td>{item.totalPrice}</td>
+            </tr>
+          )))}
+        </tbody>
+      </table>
+
+      <h4>Expenses ({filteredExpenses.length})</h4>
+      <table className="table table-striped">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Issued To</th>
+            <th>Description</th>
+            <th>Payment Method</th>
+            <th>Expense Type</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredExpenses.map((exp, i) => (
+            <tr key={i}>
+              <td>{exp.date?.split("T")[0]}</td>
+              <td>{exp.issuedTo}</td>
+              <td>{exp.description}</td>
+              <td>{exp.paymentMethod}</td>
+              <td>{exp.expenseType}</td>
+              <td>{exp.amount}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <h4>Available Stock ({stock.length})</h4>
+      <table className="table table-striped">
+        <thead>
+          <tr>
+            <th>Item Description</th>
+            <th>Unit Price</th>
+            <th>Quantity</th>
+          </tr>
+        </thead>
+        <tbody>
+          {stock.map((s, i) => (
+            <tr key={i}>
+              <td>{s.itemDescription}</td>
+              <td>{s.unitPrice}</td>
+              <td>{s.quantity}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
 
-const Sales = () => {
-  const [items, setItems] = useState([]);
-  const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [customerName, setCustomerName] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [currency, setCurrency] = useState("");
-  const [balance, setBalance] = useState("");
-
-  const [itemDescription, setItemDescription] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [unitPrice, setUnitPrice] = useState("");
-  const [vat, setVat] = useState("");
-
-  const [notification, setNotification] = useState(null);
-  const navigate = useNavigate();
-  const username = localStorage.getItem("username") || "Cashier";
-
-  const subtotal = items.reduce((acc, item) => acc + item.totalPrice, 0);
-  const vatAmount = items.reduce((acc, item) => acc + ((item.vat || 0) / 100) * item.totalPrice, 0);
-  const grandTotal = subtotal + vatAmount;
-
-  const showNotification = (message, type = "success") => setNotification({ message, type });
-
-  const clearItemFields = () => {
-    setItemDescription("");
-    setQuantity("");
-    setUnitPrice("");
-    setVat("");
-  };
-
-  // ➕ Add item to list
-  const handleAddItem = (e) => {
-    e.preventDefault();
-    if (!itemDescription || !quantity || !unitPrice) {
-      showNotification("Fill in all item fields before adding.", "error");
-      return;
-    }
-
-    const q = parseFloat(quantity);
-    const u = parseFloat(unitPrice);
-    const v = parseFloat(vat) || 0;
-    const totalPrice = q * u;
-
-    const newItem = { itemDescription, quantity: q, unitPrice: u, vat: v, totalPrice };
-    setItems((prev) => [...prev, newItem]);
-    clearItemFields();
-  };
-
-  const handleRemoveItem = (index) => {
-    const updatedItems = [...items];
-    updatedItems.splice(index, 1);
-    setItems(updatedItems);
-  };
-
-  // 💾 Submit Sale
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!date || !customerName || !paymentMethod || !currency) {
-      showNotification("All required fields must be filled.", "error");
-      return;
-    }
-    if (items.length === 0) {
-      showNotification("Add at least one item to the sale.", "error");
-      return;
-    }
-
-    try {
-      const saleData = {
-        date,
-        cashierName: username,
-        customerName,
-        paymentMethod,
-        currency,
-        balance: parseFloat(balance) || 0,
-        items: items.map(item => ({ ...item })),
-        subtotal: parseFloat(subtotal.toFixed(2)),
-        vatAmount: parseFloat(vatAmount.toFixed(2)),
-        grandTotal: parseFloat(grandTotal.toFixed(2)),
-      };
-
-      await axios.post("https://accounting-system-1.onrender.com/salesmodel/create-sale", saleData);
-
-      showNotification(`✅ Sale completed! Total: ${grandTotal.toFixed(2)} ${currency}`);
-      setItems([]);
-      setDate(new Date().toISOString().split("T")[0]);
-      setCustomerName("");
-      setPaymentMethod("");
-      setCurrency("");
-      setBalance("");
-    } catch (err) {
-      console.error(err);
-      showNotification("❌ Failed to create sale. Try again.", "error");
-    }
-  };
-
-  return (
-    <div>
-      {notification && <Toast message={notification.message} type={notification.type} onClose={() => setNotification(null)} />}
-
-      <nav className="navbar bg-dark border-bottom py-3 mb-3 shadow-sm rounded">
-        <a className="navbar-brand text-white ms-3"><b>POINT OF SALE SYSTEM</b></a>
-      </nav>
-
-      <div className="d-flex justify-content-end mb-3 mx-3">
-        <button onClick={() => navigate(-1)} className="btn btn-secondary">⬅ BACK</button>
-      </div>
-
-      <div className="card mx-auto shadow-lg mb-4" style={{ maxWidth: "90rem" }}>
-        <div className="card-body">
-          <p className="h5 mb-4 text-primary fw-bold">🧾 Sale Information</p>
-          <form onSubmit={handleSubmit}>
-            <div className="row mb-3">
-              <div className="col-md-3">
-                <label>Date</label>
-                <input type="date" className="form-control" value={date} onChange={e => setDate(e.target.value)} />
-              </div>
-              <div className="col-md-3">
-                <label>Cashier</label>
-                <input type="text" className="form-control" value={username} disabled />
-              </div>
-              <div className="col-md-3">
-                <label>Customer Name</label>
-                <input type="text" className="form-control" value={customerName} onChange={e => setCustomerName(e.target.value)} />
-              </div>
-              <div className="col-md-3">
-                <label>Balance</label>
-                <input type="number" className="form-control" value={balance} onChange={e => setBalance(e.target.value)} />
-              </div>
-            </div>
-
-            <div className="row mb-3">
-              <div className="col-md-3">
-                <label>Payment Option</label>
-                <select className="form-control" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
-                  <option value="">Choose...</option>
-                  <option>Cash</option>
-                  <option>Ecocash USD</option>
-                </select>
-              </div>
-              <div className="col-md-3">
-                <label>Currency</label>
-                <input type="text" className="form-control" value={currency} onChange={e => setCurrency(e.target.value)} />
-              </div>
-            </div>
-
-            <hr />
-            <p className="fw-bold text-secondary">Add Items</p>
-            <div className="row mb-3">
-              <div className="col-md-4">
-                <input type="text" className="form-control" placeholder="Item Description" value={itemDescription} onChange={e => setItemDescription(e.target.value)} />
-              </div>
-              <div className="col-md-2">
-                <input type="number" className="form-control" placeholder="Quantity" value={quantity} onChange={e => setQuantity(e.target.value)} />
-              </div>
-              <div className="col-md-2">
-                <input type="number" className="form-control" placeholder="Unit Price" value={unitPrice} onChange={e => setUnitPrice(e.target.value)} />
-              </div>
-              <div className="col-md-2">
-                <input type="number" className="form-control" placeholder="VAT (%)" value={vat} onChange={e => setVat(e.target.value)} />
-              </div>
-              <div className="col-md-2 d-flex align-items-end">
-                <button className="btn btn-success w-100" onClick={handleAddItem}>➕ Add Item</button>
-              </div>
-            </div>
-
-            {items.length > 0 && (
-              <div className="table-responsive mb-4">
-                <table className="table table-striped table-bordered">
-                  <thead className="table-dark">
-                    <tr>
-                      <th>#</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>VAT (%)</th><th>Total</th><th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((item, i) => (
-                      <tr key={i}>
-                        <td>{i + 1}</td>
-                        <td>{item.itemDescription}</td>
-                        <td>{item.quantity}</td>
-                        <td>{item.unitPrice.toFixed(2)}</td>
-                        <td>{item.vat || 0}</td>
-                        <td>{(item.totalPrice + ((item.vat || 0)/100 * item.totalPrice)).toFixed(2)}</td>
-                        <td><button className="btn btn-sm btn-danger" onClick={() => handleRemoveItem(i)}>🗑</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <div className="d-flex justify-content-end gap-4 mb-4">
-              <div>
-                <p className="mb-1 fw-bold">Subtotal:</p>
-                <p className="mb-1 fw-bold">VAT:</p>
-                <p className="mb-1 fw-bold text-primary">Grand Total:</p>
-              </div>
-              <div className="text-end">
-                <p className="mb-1">{subtotal.toFixed(2)} {currency}</p>
-                <p className="mb-1">{vatAmount.toFixed(2)} {currency}</p>
-                <p className="mb-1 text-primary fw-bold fs-5">{grandTotal.toFixed(2)} {currency}</p>
-              </div>
-            </div>
-
-            <button type="submit" className="btn btn-primary ms-3">✅ SAVE</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default Sales;
+export default AccountingDashboard;
