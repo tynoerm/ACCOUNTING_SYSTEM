@@ -1,17 +1,17 @@
 import express from "express";
+import ExcelJS from "exceljs";
 import salesModel from "../../models/SalesModule/sales.js";
 import stockModel from "../../models/StockModule/stocks.js";
 import expensesModel from "../../models/ExpensesModule/expenses.js";
-import ExcelJS from "exceljs";
 
 const router = express.Router();
 
-// POST /salesmodel/create-sale
+/* ================= CREATE SALE ================= */
 router.post("/create-sale", async (req, res) => {
   try {
     const { items } = req.body;
 
-    // Deduct stock
+    // Deduct stock quantities automatically
     for (const soldItem of items) {
       const stockItem = await stockModel.findOne({ itemDescription: soldItem.itemDescription });
       if (stockItem) {
@@ -22,14 +22,14 @@ router.post("/create-sale", async (req, res) => {
     }
 
     const result = await salesModel.create(req.body);
-    res.json({ success: true, data: result, message: "✅ Sale record created successfully" });
+    res.json({ data: result, message: "✅ Sale record created successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Failed to create sale" });
+    res.status(500).json({ message: "Failed to create sale" });
   }
 });
 
-// GET stock items
+/* ================= GET STOCK ITEMS ================= */
 router.get("/get-stock-items", async (req, res) => {
   try {
     const stocks = await stockModel.find({ quantity: { $gt: 0 } }, "itemDescription unitPrice quantity");
@@ -40,7 +40,7 @@ router.get("/get-stock-items", async (req, res) => {
   }
 });
 
-// GET sales
+/* ================= GET ALL SALES ================= */
 router.get("/get-sales", async (req, res) => {
   try {
     const sales = await salesModel.find().sort({ date: -1 });
@@ -51,7 +51,7 @@ router.get("/get-sales", async (req, res) => {
   }
 });
 
-// GET expenses
+/* ================= GET ALL EXPENSES ================= */
 router.get("/get-expenses", async (req, res) => {
   try {
     const expenses = await expensesModel.find().sort({ date: -1 });
@@ -62,7 +62,7 @@ router.get("/get-expenses", async (req, res) => {
   }
 });
 
-// Export Excel report
+/* ================= EXPORT REPORT TO EXCEL ================= */
 router.get("/export-report", async (req, res) => {
   try {
     const workbook = new ExcelJS.Workbook();
@@ -86,10 +86,12 @@ router.get("/export-report", async (req, res) => {
         ]);
       });
     });
-
     worksheet.addRow([]);
     worksheet.addRow(["", "", "", "", "TOTAL SALES", totalSalesAmount]);
     worksheet.addRow([]);
+
+    worksheet.addRow(["EXPENSES REPORT"]);
+    worksheet.addRow(["Date","Issued To","Description","Payment Method","Expense Type","Amount"]);
 
     const expenses = await expensesModel.find().sort({ date: 1 });
     let totalExpensesAmount = 0;
@@ -104,7 +106,6 @@ router.get("/export-report", async (req, res) => {
         expense.amount,
       ]);
     });
-
     worksheet.addRow([]);
     worksheet.addRow(["", "", "", "", "TOTAL EXPENSES", totalExpensesAmount]);
 
