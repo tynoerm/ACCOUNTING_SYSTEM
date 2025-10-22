@@ -7,20 +7,26 @@ const SalesReports = () => {
   const [salesReportsForm, setSalesReportsForm] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
-  const [selectedUser, setSelectedUser] = useState(""); // cashier filter
+  const [selectedUser, setSelectedUser] = useState("");
+  const [currentUser, setCurrentUser] = useState(null); // ✅ For checking admin
 
-  // ✅ Get Sales and Expenses
   useEffect(() => {
+    // ✅ Get logged-in user from localStorage
+    const user = localStorage.getItem("username");
+    setCurrentUser(user);
+
+    // ✅ Fetch sales
     axios.get("https://accounting-system-1.onrender.com/salesmodel/get-sales")
-      .then((res) => setSalesReportsForm(res.data)) // fix: res.data instead of res.data.data
+      .then((res) => setSalesReportsForm(res.data))
       .catch((error) => console.log(error));
 
+    // ✅ Fetch expenses
     axios.get("https://accounting-system-1.onrender.com/salesmodel/get-expenses")
-      .then((res) => setExpenses(res.data)) // fix: res.data instead of res.data.data
+      .then((res) => setExpenses(res.data))
       .catch((error) => console.log(error));
   }, []);
 
-  // ✅ Filter sales by selected date and user
+  // ✅ Filter sales by date and user
   const filteredSales = salesReportsForm
     .filter(sale => {
       const dateMatch = sale.date ? new Date(sale.date).toISOString().split("T")[0] === selectedDate : false;
@@ -30,6 +36,7 @@ const SalesReports = () => {
     .flatMap(sale => 
       sale.items.map(item => ({
         ...item,
+        _id: sale._id, // keep ID for delete
         date: sale.date,
         cashierName: sale.cashierName,
         customerName: sale.customerName,
@@ -37,17 +44,29 @@ const SalesReports = () => {
       }))
     );
 
-  // ✅ Filter expenses by selected date
   const filteredExpenses = expenses.filter(e => {
     return e.date ? new Date(e.date).toISOString().split("T")[0] === selectedDate : false;
   });
 
-  // ✅ Unique list of users for dropdown
   const uniqueUsers = [...new Set(salesReportsForm.map(s => s.cashierName).filter(Boolean))];
 
-  // ✅ Totals
   const totalSales = filteredSales.reduce((acc, item) => acc + (item.totalPrice + (item.vat || 0)/100 * item.totalPrice), 0);
   const totalExpenses = filteredExpenses.reduce((acc, item) => acc + (item.amount || 0), 0);
+
+  // ✅ Handle delete sale
+  const handleDeleteSale = async (id) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this sale?");
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`https://accounting-system-1.onrender.com/salesmodel/delete-sale/${id}`);
+      setSalesReportsForm(prev => prev.filter(sale => sale._id !== id));
+      alert("Sale deleted successfully");
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Failed to delete sale");
+    }
+  };
 
   const handleDownload = async (type) => {
     try {
@@ -55,7 +74,6 @@ const SalesReports = () => {
         `https://accounting-system-1.onrender.com/salesmodel/export-report`,
         { responseType: "blob" }
       );
-
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -123,6 +141,7 @@ const SalesReports = () => {
             <th>Unit Price</th>
             <th>VAT</th>
             <th>Total</th>
+            {currentUser === "admin" && <th>Action</th>}
           </tr>
         </thead>
         <tbody>
@@ -138,11 +157,24 @@ const SalesReports = () => {
                 <td>{sale.unitPrice?.toFixed(2) || "0.00"}</td>
                 <td>{sale.vat?.toFixed(2) || "0.00"}</td>
                 <td>{((sale.totalPrice + ((sale.vat || 0)/100 * sale.totalPrice))).toFixed(2)}</td>
+                {currentUser === "admin" && (
+                  <td>
+                    <Button 
+                      variant="danger" 
+                      size="sm" 
+                      onClick={() => handleDeleteSale(sale._id)}
+                    >
+                      Delete
+                    </Button>
+                  </td>
+                )}
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="9" className="text-center">No sales found for selected filters</td>
+              <td colSpan={currentUser === "admin" ? "10" : "9"} className="text-center">
+                No sales found for selected filters
+              </td>
             </tr>
           )}
         </tbody>
