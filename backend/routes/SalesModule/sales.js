@@ -62,6 +62,31 @@ router.get("/get-expenses", async (req, res) => {
   }
 });
 
+/* ================= DELETE SALE ================= */
+router.delete("/delete-sale/:id", async (req, res) => {
+  try {
+    const sale = await salesModel.findById(req.params.id);
+    if (!sale) {
+      return res.status(404).json({ message: "Sale not found" });
+    }
+
+    // ✅ Restore stock quantities after deleting sale
+    for (const soldItem of sale.items) {
+      const stockItem = await stockModel.findOne({ itemDescription: soldItem.itemDescription });
+      if (stockItem) {
+        stockItem.quantity += soldItem.quantity; // restore quantity
+        await stockItem.save();
+      }
+    }
+
+    await salesModel.findByIdAndDelete(req.params.id);
+    res.json({ message: "✅ Sale deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "❌ Failed to delete sale" });
+  }
+});
+
 /* ================= EXPORT REPORT TO EXCEL ================= */
 router.get("/export-report", async (req, res) => {
   try {
