@@ -48,8 +48,8 @@ const Expenses = () => {
     new Date().toISOString().split("T")[0]
   );
 
-  // Date is fixed to today
-  const [date] = useState(new Date().toISOString().split("T")[0]);
+  // ✅ Make date selectable instead of fixed
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
 
   const navigate = useNavigate();
   const userRole = localStorage.getItem("role");
@@ -88,7 +88,15 @@ const Expenses = () => {
   const handleAddToList = (e) => {
     e.preventDefault();
 
-    if (!issuedTo || !description || !paymentMethod || !expenseType || !amount || !authorisedBy) {
+    if (
+      !date ||
+      !issuedTo ||
+      !description ||
+      !paymentMethod ||
+      !expenseType ||
+      !amount ||
+      !authorisedBy
+    ) {
       showNotification("All fields are required.", "error");
       return;
     }
@@ -98,7 +106,15 @@ const Expenses = () => {
       return;
     }
 
-    const newExpense = { date, issuedTo, description, paymentMethod, expenseType, amount, authorisedBy };
+    const newExpense = {
+      date,
+      issuedTo,
+      description,
+      paymentMethod,
+      expenseType,
+      amount,
+      authorisedBy,
+    };
 
     setTempExpenses((prev) => [...prev, newExpense]);
     setIssuedTo("");
@@ -107,6 +123,7 @@ const Expenses = () => {
     setExpenseType("");
     setAmount("");
     setAuthorisedBy("");
+    setDate(new Date().toISOString().split("T")[0]);
   };
 
   // Finalize and save all
@@ -136,7 +153,9 @@ const Expenses = () => {
     if (!window.confirm("Are you sure you want to delete this expense?")) return;
 
     try {
-      await axios.delete(`https://accounting-system-1.onrender.com/expense/${id}`);
+      await axios.delete(
+        `https://accounting-system-1.onrender.com/expense/${id}`
+      );
       setExpensesForm((prev) => prev.filter((expense) => expense._id !== id));
       showNotification("Expense deleted successfully!");
     } catch (err) {
@@ -223,6 +242,17 @@ const Expenses = () => {
                   className="form-control"
                   value={issuedTo}
                   onChange={(e) => setIssuedTo(e.target.value)}
+                />
+              </div>
+
+              {/* ✅ New Date Picker Field */}
+              <div className="col-md-6">
+                <label className="form-label">Select Date:</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
                 />
               </div>
             </div>
