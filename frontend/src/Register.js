@@ -153,6 +153,7 @@ function Register() {
                                     <option value="gweru">gweru</option>
                                     <option value="kaguvi">kaguvi</option>
                                     <option value="admin">admin</option>
+                                     <option value="bishopgaul>bishop gaul</option>   
                                 </select>
                             </div>
                         </div>
@@ -172,3 +173,4 @@ function Register() {
 }
 
 export default Register;
+
