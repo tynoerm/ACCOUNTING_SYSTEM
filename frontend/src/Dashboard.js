@@ -59,6 +59,19 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
+
+                         <div className="col">
+            <div className="card shadow-lg rounded">
+              <div className="card-body">
+                <div style={styles.cardHeader}>
+                  <FaWarehouse style={styles.icon} />
+                  <h5 className="card-title">WAREHOUSE JOB CARDS</h5>
+                </div>
+                <p className="card-text">Goods in.</p>
+                <Link to="/Stock" className="btn btn-primary">Next</Link>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -90,3 +103,4 @@ const styles = {
 };
 
 export default Dashboard;
+
