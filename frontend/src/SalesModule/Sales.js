@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-// ✅ Toast notification component
+// Toast Component
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 3000);
@@ -32,10 +32,9 @@ const Toast = ({ message, type, onClose }) => {
 const Sales = () => {
   const [items, setItems] = useState([]);
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [customerName, setCustomerName] = useState("");
+
+  // Removed customerName, currency, balance
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [currency, setCurrency] = useState("");
-  const [balance, setBalance] = useState("");
 
   const [itemDescription, setItemDescription] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -50,7 +49,8 @@ const Sales = () => {
   const vatAmount = items.reduce((acc, item) => acc + ((item.vat || 0) / 100) * item.totalPrice, 0);
   const grandTotal = subtotal + vatAmount;
 
-  const showNotification = (message, type = "success") => setNotification({ message, type });
+  const showNotification = (message, type = "success") =>
+    setNotification({ message, type });
 
   const clearItemFields = () => {
     setItemDescription("");
@@ -59,7 +59,6 @@ const Sales = () => {
     setVat("");
   };
 
-  // ➕ Add item to list
   const handleAddItem = (e) => {
     e.preventDefault();
     if (!itemDescription || !quantity || !unitPrice) {
@@ -72,7 +71,13 @@ const Sales = () => {
     const v = parseFloat(vat) || 0;
     const totalPrice = q * u;
 
-    const newItem = { itemDescription, quantity: q, unitPrice: u, vat: v, totalPrice };
+    const newItem = {
+      itemDescription,
+      quantity: q,
+      unitPrice: u,
+      vat: v,
+      totalPrice,
+    };
     setItems((prev) => [...prev, newItem]);
     clearItemFields();
   };
@@ -83,14 +88,14 @@ const Sales = () => {
     setItems(updatedItems);
   };
 
-  // 💾 Submit Sale
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!date || !customerName || !paymentMethod || !currency) {
+    if (!date || !paymentMethod) {
       showNotification("All required fields must be filled.", "error");
       return;
     }
+
     if (items.length === 0) {
       showNotification("Add at least one item to the sale.", "error");
       return;
@@ -100,25 +105,23 @@ const Sales = () => {
       const saleData = {
         date,
         cashierName: username,
-        customerName,
         paymentMethod,
-        currency,
-        balance: parseFloat(balance) || 0,
-        items: items.map(item => ({ ...item })),
-        subtotal: parseFloat(subtotal.toFixed(2)),
-        vatAmount: parseFloat(vatAmount.toFixed(2)),
-        grandTotal: parseFloat(grandTotal.toFixed(2)),
+        items: items.map((item) => ({ ...item })),
+        subtotal: subtotal.toFixed(2),
+        vatAmount: vatAmount.toFixed(2),
+        grandTotal: grandTotal.toFixed(2),
       };
 
-      await axios.post("https://accounting-system-1.onrender.com/salesmodel/create-sale", saleData);
+      await axios.post(
+        "https://accounting-system-1.onrender.com/salesmodel/create-sale",
+        saleData
+      );
 
-      showNotification(`✅ Sale completed! Total: ${grandTotal.toFixed(2)} ${currency}`);
+      showNotification(`✅ Sale completed! Total: ${grandTotal.toFixed(2)}`);
+
       setItems([]);
       setDate(new Date().toISOString().split("T")[0]);
-      setCustomerName("");
       setPaymentMethod("");
-      setCurrency("");
-      setBalance("");
     } catch (err) {
       console.error(err);
       showNotification("❌ Failed to create sale. Try again.", "error");
@@ -127,71 +130,111 @@ const Sales = () => {
 
   return (
     <div>
-      {notification && <Toast message={notification.message} type={notification.type} onClose={() => setNotification(null)} />}
+      {notification && (
+        <Toast
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
 
       <nav className="navbar bg-dark border-bottom py-3 mb-3 shadow-sm rounded">
-        <a className="navbar-brand text-white ms-3"><b>POINT OF SALE SYSTEM</b></a>
+        <a className="navbar-brand text-white ms-3">
+          <b>POINT OF SALE SYSTEM</b>
+        </a>
       </nav>
 
       <div className="d-flex justify-content-end mb-3 mx-3">
-        <button onClick={() => navigate(-1)} className="btn btn-secondary">⬅ BACK</button>
+        <button onClick={() => navigate(-1)} className="btn btn-secondary">
+          ⬅ BACK
+        </button>
       </div>
 
       <div className="card mx-auto shadow-lg mb-4" style={{ maxWidth: "90rem" }}>
         <div className="card-body">
           <p className="h5 mb-4 text-primary fw-bold">🧾 Sale Information</p>
+
           <form onSubmit={handleSubmit}>
             <div className="row mb-3">
               <div className="col-md-3">
                 <label>Date</label>
-                <input type="date" className="form-control" value={date} onChange={e => setDate(e.target.value)} />
+                <input
+                  type="date"
+                  className="form-control"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                />
               </div>
+
               <div className="col-md-3">
                 <label>Cashier</label>
                 <input type="text" className="form-control" value={username} disabled />
-              </div>
-              <div className="col-md-3">
-                <label>Customer Name</label>
-                <input type="text" className="form-control" value={customerName} onChange={e => setCustomerName(e.target.value)} />
-              </div>
-              <div className="col-md-3">
-                <label>Balance</label>
-                <input type="number" className="form-control" value={balance} onChange={e => setBalance(e.target.value)} />
               </div>
             </div>
 
             <div className="row mb-3">
               <div className="col-md-3">
-                <label>Payment Option</label>
-                <select className="form-control" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+                <label>Payment Method</label>
+                <select
+                  className="form-control"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                >
                   <option value="">Choose...</option>
                   <option>Cash</option>
                   <option>Ecocash USD</option>
                 </select>
               </div>
-              <div className="col-md-3">
-                <label>Currency</label>
-                <input type="text" className="form-control" value={currency} onChange={e => setCurrency(e.target.value)} />
-              </div>
             </div>
 
             <hr />
             <p className="fw-bold text-secondary">Add Items</p>
+
             <div className="row mb-3">
               <div className="col-md-4">
-                <input type="text" className="form-control" placeholder="Item Description" value={itemDescription} onChange={e => setItemDescription(e.target.value)} />
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Item Description"
+                  value={itemDescription}
+                  onChange={(e) => setItemDescription(e.target.value)}
+                />
               </div>
+
               <div className="col-md-2">
-                <input type="number" className="form-control" placeholder="Quantity" value={quantity} onChange={e => setQuantity(e.target.value)} />
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="Quantity"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                />
               </div>
+
               <div className="col-md-2">
-                <input type="number" className="form-control" placeholder="Unit Price" value={unitPrice} onChange={e => setUnitPrice(e.target.value)} />
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="Unit Price"
+                  value={unitPrice}
+                  onChange={(e) => setUnitPrice(e.target.value)}
+                />
               </div>
+
               <div className="col-md-2">
-                <input type="number" className="form-control" placeholder="VAT (%)" value={vat} onChange={e => setVat(e.target.value)} />
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="VAT (%)"
+                  value={vat}
+                  onChange={(e) => setVat(e.target.value)}
+                />
               </div>
+
               <div className="col-md-2 d-flex align-items-end">
-                <button className="btn btn-success w-100" onClick={handleAddItem}>➕ Add Item</button>
+                <button className="btn btn-success w-100" onClick={handleAddItem}>
+                  ➕ Add Item
+                </button>
               </div>
             </div>
 
@@ -200,9 +243,16 @@ const Sales = () => {
                 <table className="table table-striped table-bordered">
                   <thead className="table-dark">
                     <tr>
-                      <th>#</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>VAT (%)</th><th>Total</th><th></th>
+                      <th>#</th>
+                      <th>Description</th>
+                      <th>Qty</th>
+                      <th>Unit Price</th>
+                      <th>VAT (%)</th>
+                      <th>Total</th>
+                      <th></th>
                     </tr>
                   </thead>
+
                   <tbody>
                     {items.map((item, i) => (
                       <tr key={i}>
@@ -211,8 +261,20 @@ const Sales = () => {
                         <td>{item.quantity}</td>
                         <td>{item.unitPrice.toFixed(2)}</td>
                         <td>{item.vat || 0}</td>
-                        <td>{(item.totalPrice + ((item.vat || 0)/100 * item.totalPrice)).toFixed(2)}</td>
-                        <td><button className="btn btn-sm btn-danger" onClick={() => handleRemoveItem(i)}>🗑</button></td>
+                        <td>
+                          {(
+                            item.totalPrice + ((item.vat || 0) / 100) * item.totalPrice
+                          ).toFixed(2)}
+                        </td>
+
+                        <td>
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleRemoveItem(i)}
+                          >
+                            🗑
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -226,14 +288,19 @@ const Sales = () => {
                 <p className="mb-1 fw-bold">VAT:</p>
                 <p className="mb-1 fw-bold text-primary">Grand Total:</p>
               </div>
+
               <div className="text-end">
-                <p className="mb-1">{subtotal.toFixed(2)} {currency}</p>
-                <p className="mb-1">{vatAmount.toFixed(2)} {currency}</p>
-                <p className="mb-1 text-primary fw-bold fs-5">{grandTotal.toFixed(2)} {currency}</p>
+                <p className="mb-1">{subtotal.toFixed(2)}</p>
+                <p className="mb-1">{vatAmount.toFixed(2)}</p>
+                <p className="mb-1 text-primary fw-bold fs-5">
+                  {grandTotal.toFixed(2)}
+                </p>
               </div>
             </div>
 
-            <button type="submit" className="btn btn-primary ms-3">✅ SAVE</button>
+            <button type="submit" className="btn btn-primary ms-3">
+              ✅ SAVE
+            </button>
           </form>
         </div>
       </div>
