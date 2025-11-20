@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 // Toast Component
 const Toast = ({ message, type, onClose }) => {
-  useEffect(() => {
+  React.useEffect(() => {
     const timer = setTimeout(onClose, 3000);
     return () => clearTimeout(timer);
   }, [onClose]);
@@ -19,7 +19,6 @@ const Toast = ({ message, type, onClose }) => {
         color: type === "error" ? "#842029" : "#0f5132",
         padding: "15px 25px",
         borderRadius: "8px",
-        boxShadow: "0px 0px 10px rgba(0,0,0,0.3)",
         zIndex: 9999,
         fontWeight: "500",
       }}
@@ -32,8 +31,6 @@ const Toast = ({ message, type, onClose }) => {
 const Sales = () => {
   const [items, setItems] = useState([]);
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
-
-  // Removed customerName, currency, balance
   const [paymentMethod, setPaymentMethod] = useState("");
 
   const [itemDescription, setItemDescription] = useState("");
@@ -46,7 +43,10 @@ const Sales = () => {
   const username = localStorage.getItem("username") || "Cashier";
 
   const subtotal = items.reduce((acc, item) => acc + item.totalPrice, 0);
-  const vatAmount = items.reduce((acc, item) => acc + ((item.vat || 0) / 100) * item.totalPrice, 0);
+  const vatAmount = items.reduce(
+    (acc, item) => acc + ((item.vat || 0) / 100) * item.totalPrice,
+    0
+  );
   const grandTotal = subtotal + vatAmount;
 
   const showNotification = (message, type = "success") =>
@@ -91,13 +91,13 @@ const Sales = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!date || !paymentMethod) {
-      showNotification("All required fields must be filled.", "error");
+    if (!paymentMethod) {
+      showNotification("Choose a payment method.", "error");
       return;
     }
 
     if (items.length === 0) {
-      showNotification("Add at least one item to the sale.", "error");
+      showNotification("Add at least one item.", "error");
       return;
     }
 
@@ -106,10 +106,10 @@ const Sales = () => {
         date,
         cashierName: username,
         paymentMethod,
-        items: items.map((item) => ({ ...item })),
-        subtotal: subtotal.toFixed(2),
-        vatAmount: vatAmount.toFixed(2),
-        grandTotal: grandTotal.toFixed(2),
+        items,
+        subtotal,
+        vatAmount,
+        grandTotal,
       };
 
       await axios.post(
@@ -117,14 +117,14 @@ const Sales = () => {
         saleData
       );
 
-      showNotification(`✅ Sale completed! Total: ${grandTotal.toFixed(2)}`);
+      showNotification("Sale Saved Successfully!");
 
       setItems([]);
-      setDate(new Date().toISOString().split("T")[0]);
       setPaymentMethod("");
+      setDate(new Date().toISOString().split("T")[0]);
     } catch (err) {
       console.error(err);
-      showNotification("❌ Failed to create sale. Try again.", "error");
+      showNotification("Failed to save sale.", "error");
     }
   };
 
