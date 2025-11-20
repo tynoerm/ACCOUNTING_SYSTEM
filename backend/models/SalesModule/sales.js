@@ -11,9 +11,15 @@ const itemSchema = new mongoose.Schema({
 const salesSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   cashierName: { type: String, required: true },
-  customerName: { type: String, required: true },
+
+  // NOW OPTIONAL
+  customerName: { type: String, default: null },
+
   paymentMethod: { type: String, required: true },
-  currency: { type: String, required: true },
+
+  // NOW OPTIONAL
+  currency: { type: String, default: null },
+
   balance: { type: Number, default: 0 },
   items: [itemSchema],
   subtotal: { type: Number, required: true },
