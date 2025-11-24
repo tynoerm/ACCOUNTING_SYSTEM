@@ -1,9 +1,11 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaDollarSign, FaFileInvoice, FaChartLine } from 'react-icons/fa';
 import Footer from '../Components/Footer.js';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+
   return (
     <div style={styles.container}>
       {/* Navbar */}
@@ -15,12 +17,18 @@ const Dashboard = () => {
 
       {/* Back Button */}
       <div className="d-flex justify-content-end">
-        <Link to="/" className="btn btn-primary" style={styles.cardButton}>BACK</Link>
+        <button
+          onClick={() => navigate(-1)}
+          className="btn btn-primary"
+          style={styles.cardButton}
+        >
+          BACK
+        </button>
       </div>
 
       {/* Dashboard Content */}
       <div className="row row-cols-1 row-cols-md-3 g-4" style={styles.cardContainer}>
-        
+
         <div className="col">
           <div className="card shadow-lg rounded" style={styles.card}>
             <div className="card-body">
@@ -34,10 +42,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-     
-
-
-        
         <div className="col">
           <div className="card shadow-lg rounded" style={styles.card}>
             <div className="card-body">
@@ -50,6 +54,7 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+
       </div>
 
       <Footer />
@@ -61,7 +66,7 @@ const styles = {
   container: {
     display: 'flex',
     flexDirection: 'column',
-    minHeight: '100vh',  // Full viewport height
+    minHeight: '100vh',
     padding: '0 20px',
   },
   navbar: {
@@ -106,4 +111,3 @@ const styles = {
 };
 
 export default Dashboard;
-
