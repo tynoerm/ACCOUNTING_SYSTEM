@@ -12,7 +12,7 @@ import expensesModel from "../../models/ExpensesModule/expenses.js";
 const router = express.Router();
 
 /* ---------- CONFIG ---------- */
-const LOGO_RELATIVE_PATH = "backend/assets/hino-logo.jpg"; // <-- place your logo here
+const LOGO_RELATIVE_PATH = "../../assets/hino_logo.jpg"; // <-- place your logo here
 const COMPANY = {
   name: "HINO / XYZ Traders",
   address: "123 Main Street, Harare, Zimbabwe",
@@ -322,3 +322,4 @@ async function writeInvoiceToDoc(doc, sale) {
 }
 
 export { router as salesRoutes };
+
