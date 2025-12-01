@@ -89,44 +89,47 @@ const Sales = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!paymentMethod) {
-      showNotification("Choose a payment method.", "error");
-      return;
-    }
+  if (!paymentMethod) return showNotification("Choose a payment method.", "error");
+  if (items.length === 0) return showNotification("Add at least one item.", "error");
 
-    if (items.length === 0) {
-      showNotification("Add at least one item.", "error");
-      return;
-    }
+  try {
+    const saleData = {
+      date,
+      cashierName: username,
+      paymentMethod,
+      items,
+      subtotal,
+      vatAmount,
+      grandTotal,
+    };
 
-    try {
-      const saleData = {
-        date,
-        cashierName: username,
-        paymentMethod,
-        items,
-        subtotal,
-        vatAmount,
-        grandTotal,
-      };
+    const res = await axios.post(
+      "https://accounting-system-1.onrender.com/salesmodel/create-sale",
+      saleData
+    );
 
-      await axios.post(
-        "https://accounting-system-1.onrender.com/salesmodel/create-sale",
-        saleData
-      );
+    showNotification("Sale Saved Successfully!");
 
-      showNotification("Sale Saved Successfully!");
+    // PDF download
+    const pdfBase64 = res.data.pdf;
+    const link = document.createElement("a");
+    link.href = `data:application/pdf;base64,${pdfBase64}`;
+    link.download = `invoice_${Date.now()}.pdf`;
+    link.click();
 
-      setItems([]);
-      setPaymentMethod("");
-      setDate(new Date().toISOString().split("T")[0]);
-    } catch (err) {
-      console.error(err);
-      showNotification("Failed to save sale.", "error");
-    }
-  };
+    // Reset Fields
+    setItems([]);
+    setPaymentMethod("");
+    setDate(new Date().toISOString().split("T")[0]);
+  } catch (err) {
+    console.error(err);
+    showNotification("Failed to save sale.", "error");
+  }
+};
+
+
 
   return (
     <div>
@@ -309,3 +312,4 @@ const Sales = () => {
 };
 
 export default Sales;
+
