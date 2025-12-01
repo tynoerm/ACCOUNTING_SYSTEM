@@ -32,13 +32,12 @@ const Sales = () => {
   const [items, setItems] = useState([]);
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [paymentMethod, setPaymentMethod] = useState("");
-
   const [itemDescription, setItemDescription] = useState("");
   const [quantity, setQuantity] = useState("");
   const [unitPrice, setUnitPrice] = useState("");
   const [vat, setVat] = useState("");
-
   const [notification, setNotification] = useState(null);
+
   const navigate = useNavigate();
   const username = localStorage.getItem("username") || "Cashier";
 
@@ -78,6 +77,7 @@ const Sales = () => {
       vat: v,
       totalPrice,
     };
+
     setItems((prev) => [...prev, newItem]);
     clearItemFields();
   };
@@ -89,47 +89,47 @@ const Sales = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!paymentMethod) return showNotification("Choose a payment method.", "error");
-  if (items.length === 0) return showNotification("Add at least one item.", "error");
+    if (!paymentMethod) return showNotification("Choose a payment method.", "error");
+    if (items.length === 0) return showNotification("Add at least one item.", "error");
 
-  try {
-    const saleData = {
-      date,
-      cashierName: username,
-      paymentMethod,
-      items,
-      subtotal,
-      vatAmount,
-      grandTotal,
-    };
+    try {
+      const saleData = {
+        date,
+        cashierName: username,
+        paymentMethod,
+        items,
+        subtotal,
+        vatAmount,
+        grandTotal,
+      };
 
-    const res = await axios.post(
-      "https://accounting-system-1.onrender.com/salesmodel/create-sale",
-      saleData
-    );
+      const res = await axios.post(
+        "https://accounting-system-1.onrender.com/salesmodel/create-sale",
+        saleData
+      );
 
-    showNotification("Sale Saved Successfully!");
+      showNotification("Sale Saved Successfully!");
 
-    // PDF download
-    const pdfBase64 = res.data.pdf;
-    const link = document.createElement("a");
-    link.href = `data:application/pdf;base64,${pdfBase64}`;
-    link.download = `invoice_${Date.now()}.pdf`;
-    link.click();
+      // ✅ PDF download
+      const pdfBase64 = res.data.invoiceBase64; // <-- Correct field name from backend
+      const link = document.createElement("a");
+      link.href = `data:application/pdf;base64,${pdfBase64}`;
+      link.download = `invoice_${Date.now()}.pdf`;
+      document.body.appendChild(link); // Required for Firefox
+      link.click();
+      link.remove();
 
-    // Reset Fields
-    setItems([]);
-    setPaymentMethod("");
-    setDate(new Date().toISOString().split("T")[0]);
-  } catch (err) {
-    console.error(err);
-    showNotification("Failed to save sale.", "error");
-  }
-};
-
-
+      // Reset Fields
+      setItems([]);
+      setPaymentMethod("");
+      setDate(new Date().toISOString().split("T")[0]);
+    } catch (err) {
+      console.error(err);
+      showNotification("Failed to save sale.", "error");
+    }
+  };
 
   return (
     <div>
@@ -312,4 +312,3 @@ const Sales = () => {
 };
 
 export default Sales;
-
