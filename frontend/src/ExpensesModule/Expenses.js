@@ -44,12 +44,10 @@ const Expenses = () => {
   const [amount, setAmount] = useState("");
   const [authorisedBy, setAuthorisedBy] = useState("");
   const [notification, setNotification] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [selectedDate, setSelectedDate] = useState("");
 
-  // ✅ Make date selectable instead of fixed
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  // Date input in form (optional)
+  const [date, setDate] = useState("");
 
   const navigate = useNavigate();
   const userRole = localStorage.getItem("role");
@@ -62,11 +60,10 @@ const Expenses = () => {
       .catch((err) => console.log(err));
   }, []);
 
+  // Filtered expenses: show all if no date selected
   const filteredExpenses = expensesForm.filter((q) => {
-    const expenseDate = q.date
-      ? new Date(q.date).toISOString().split("T")[0]
-      : "";
-    return expenseDate === selectedDate;
+    const expenseDate = q.date ? new Date(q.date).toISOString().split("T")[0] : "";
+    return selectedDate ? expenseDate === selectedDate : true;
   });
 
   const handleShow = () => setShow(true);
@@ -75,7 +72,7 @@ const Expenses = () => {
     setTempExpenses([]);
   };
   const handleDownloadShow = () => {
-    setDownloadDate(selectedDate || new Date().toISOString().split("T")[0]);
+    setDownloadDate(selectedDate || "");
     setShowDownloadModal(true);
   };
   const handleDownloadClose = () => setShowDownloadModal(false);
@@ -89,7 +86,6 @@ const Expenses = () => {
     e.preventDefault();
 
     if (
-      !date ||
       !issuedTo ||
       !description ||
       !paymentMethod ||
@@ -97,7 +93,7 @@ const Expenses = () => {
       !amount ||
       !authorisedBy
     ) {
-      showNotification("All fields are required.", "error");
+      showNotification("All fields except date are required.", "error");
       return;
     }
 
@@ -106,8 +102,11 @@ const Expenses = () => {
       return;
     }
 
+    // Use user-provided date or default to today
+    const expenseDate = date ? date : new Date().toISOString().split("T")[0];
+
     const newExpense = {
-      date,
+      date: expenseDate,
       issuedTo,
       description,
       paymentMethod,
@@ -117,13 +116,15 @@ const Expenses = () => {
     };
 
     setTempExpenses((prev) => [...prev, newExpense]);
+
+    // Reset form fields
     setIssuedTo("");
     setDescription("");
     setPaymentMethod("");
     setExpenseType("");
     setAmount("");
     setAuthorisedBy("");
-    setDate(new Date().toISOString().split("T")[0]);
+    setDate(""); // ready for next input
   };
 
   // Finalize and save all
@@ -165,19 +166,19 @@ const Expenses = () => {
   };
 
   const handleExcelDownload = async () => {
-    if (!downloadDate) {
-      showNotification("Please select a date to download.", "error");
-      return;
-    }
     try {
+      const dateParam = downloadDate ? `?date=${downloadDate}` : "";
       const response = await axios.get(
-        `https://accounting-system-1.onrender.com/expense/download/excel?date=${downloadDate}`,
+        `https://accounting-system-1.onrender.com/expense/download/excel${dateParam}`,
         { responseType: "blob" }
       );
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `expenses_${downloadDate}.xlsx`);
+      link.setAttribute(
+        "download",
+        `expenses_${downloadDate || "all_dates"}.xlsx`
+      );
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -218,7 +219,9 @@ const Expenses = () => {
       </div>
 
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2 className="text-secondary">Expenses for {selectedDate}</h2>
+        <h2 className="text-secondary">
+          {selectedDate ? `Expenses for ${selectedDate}` : "All Expenses"}
+        </h2>
         <input
           type="date"
           className="form-control w-auto"
@@ -245,14 +248,14 @@ const Expenses = () => {
                 />
               </div>
 
-              {/* ✅ New Date Picker Field */}
               <div className="col-md-6">
-                <label className="form-label">Select Date:</label>
+                <label className="form-label">Select Date (optional):</label>
                 <input
                   type="date"
                   className="form-control"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
+                  placeholder="Enter date or leave empty for today"
                 />
               </div>
             </div>
