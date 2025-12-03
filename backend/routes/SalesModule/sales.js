@@ -11,7 +11,7 @@ import salesModel from "../../models/SalesModule/sales.js";
 import stockModel from "../../models/StockModule/stocks.js";
 import expensesModel from "../../models/ExpensesModule/expenses.js";
 
-// Fix __dirname for ES Modules
+// Fix __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -172,9 +172,6 @@ function generateInvoicePDFBuffer(sale) {
 /* ---------------- PDF GENERATOR FUNCTION -------------------- */
 function writeInvoiceToDoc(doc, sale) {
   return new Promise((resolve) => {
-    // Debug logo path
-    console.log("LOGO PATH:", LOGO_PATH);
-    console.log("Exists:", fs.existsSync(LOGO_PATH));
 
     /* ------------ HEADER ------------- */
     if (fs.existsSync(LOGO_PATH)) {
@@ -192,20 +189,28 @@ function writeInvoiceToDoc(doc, sale) {
     doc.font("Helvetica-Bold").fontSize(30).fillColor("#1f3c88")
       .text("INVOICE", 0, 30, { align: "right" });
 
-    doc.moveTo(40, 130).lineTo(555, 130).lineWidth(2).strokeColor("#1f3c88").stroke();
+    /*  
+      🔥 FIX: move the line BELOW the logo  
+      Original was at Y = 130 → cutting through logo  
+    */
+    doc.moveTo(40, 155)
+      .lineTo(555, 155)
+      .lineWidth(2)
+      .strokeColor("#1f3c88")
+      .stroke();
 
     /* ------------ INVOICE INFO ------------- */
     doc.font("Helvetica").fillColor("#000").fontSize(11);
 
-    doc.text(`Invoice ID: `, 40, 150, { continued: true })
+    doc.text(`Invoice ID: `, 40, 170, { continued: true })
       .font("Helvetica-Bold")
       .text(sale.invoiceId);
 
-    doc.font("Helvetica").text(`Customer: `, 40, 165, { continued: true })
+    doc.font("Helvetica").text(`Customer: `, 40, 185, { continued: true })
       .font("Helvetica-Bold")
       .text(sale.customerName || "Walk-in");
 
-    doc.font("Helvetica").text(`Date: `, 40, 180, { continued: true })
+    doc.font("Helvetica").text(`Date: `, 40, 200, { continued: true })
       .font("Helvetica-Bold")
       .text(new Date(sale.date).toLocaleString());
 
