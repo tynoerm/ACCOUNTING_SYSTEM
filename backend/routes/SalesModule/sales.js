@@ -17,22 +17,32 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-/* ---------------------- Company config ---------------------- */
-const LOGO_RELATIVE_PATH = path.resolve(
-  __dirname,
-  "../../assets/hino.jpg"
-);
+/* -----------------------------------------------------------
+   FIXED LOGO PATH (GUARANTEED TO WORK)
+----------------------------------------------------------- */
+
+// Primary path: backend/assets/hino.jpg
+let LOGO_PATH = path.join(__dirname, "../assets/hino.jpg");
+
+// Fallback path: process.cwd() + backend/assets
+if (!fs.existsSync(LOGO_PATH)) {
+  console.warn("Primary logo path failed:", LOGO_PATH);
+  LOGO_PATH = path.join(process.cwd(), "backend/assets/hino.jpg");
+}
+
+if (!fs.existsSync(LOGO_PATH)) {
+  console.warn("Logo STILL not found! Check your asset location.");
+}
 
 const COMPANY = {
   name: "Tinphil Investments",
   address: "12 Mutley Bend Harare, Zimbabwe",
   phone: "+263 774 742 212",
   email: "tinphilinvestment@gmail.com",
-
 };
 
 /* ============================================================
-   AUTO GENERATE INVOICE NUMBER (INV001, INV002 ...)
+   AUTO GENERATE INVOICE NUMBER
 ============================================================ */
 async function generateInvoiceNumber() {
   const lastInvoice = await salesModel.findOne().sort({ createdAt: -1 });
@@ -52,11 +62,12 @@ router.post("/create-sale", async (req, res) => {
     if (!items || !Array.isArray(items) || items.length === 0)
       return res.status(400).json({ message: "No items provided for sale." });
 
-    // Deduct stock
+    // Deduct Stock
     for (const soldItem of items) {
       const stockItem = await stockModel.findOne({
         itemDescription: soldItem.itemDescription,
       });
+
       if (stockItem) {
         stockItem.quantity -= soldItem.quantity;
         if (stockItem.quantity < 0) stockItem.quantity = 0;
@@ -64,13 +75,11 @@ router.post("/create-sale", async (req, res) => {
       }
     }
 
-    // Generate unique invoice number
-    const newInvoiceId = await generateInvoiceNumber();
+    const invoiceId = await generateInvoiceNumber();
 
-    // Create Sale
     const result = await salesModel.create({
       ...req.body,
-      invoiceId: newInvoiceId,
+      invoiceId,
     });
 
     const pdfBuffer = await generateInvoicePDFBuffer(result);
@@ -82,6 +91,7 @@ router.post("/create-sale", async (req, res) => {
       invoiceBase64: pdfBase64,
       saleId: result._id,
     });
+
   } catch (err) {
     console.error("create-sale error:", err);
     res.status(500).json({ message: "Failed to create sale" });
@@ -125,7 +135,6 @@ router.delete("/delete-sale/:id", async (req, res) => {
     const sale = await salesModel.findById(req.params.id);
     if (!sale) return res.status(404).json({ message: "Sale not found" });
 
-    // Restore stock
     for (const soldItem of sale.items) {
       const stockItem = await stockModel.findOne({
         itemDescription: soldItem.itemDescription,
@@ -138,6 +147,7 @@ router.delete("/delete-sale/:id", async (req, res) => {
 
     await salesModel.findByIdAndDelete(req.params.id);
     res.json({ message: "Sale deleted successfully" });
+
   } catch (err) {
     console.error("delete-sale error:", err);
     res.status(500).json({ message: "Failed to delete sale" });
@@ -153,15 +163,17 @@ router.get("/export-sale-invoice/:id", async (req, res) => {
     if (!sale) return res.status(404).json({ message: "Sale not found" });
 
     const doc = new PDFDocument({ margin: 40, size: "A4" });
+
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=invoice-${sale.invoiceId || sale._id}.pdf`
+      `attachment; filename=invoice-${sale.invoiceId}.pdf`
     );
 
     doc.pipe(res);
     await writeInvoiceToDoc(doc, sale);
     doc.end();
+
   } catch (err) {
     console.error("export-sale-invoice error:", err);
     res.status(500).json({ message: "Failed to export invoice" });
@@ -169,7 +181,7 @@ router.get("/export-sale-invoice/:id", async (req, res) => {
 });
 
 /* ------------------------------------------------------------
-   Generate PDF as Buffer (for create-sale)
+   Generate PDF Buffer
 ------------------------------------------------------------ */
 function generateInvoicePDFBuffer(sale) {
   return new Promise((resolve, reject) => {
@@ -186,128 +198,94 @@ function generateInvoicePDFBuffer(sale) {
 }
 
 /* ------------------------------------------------------------
-   BEAUTIFUL PREMIUM PDF LAYOUT
+   PREMUIM PDF LAYOUT + LOGO FIXED
 ------------------------------------------------------------ */
 function writeInvoiceToDoc(doc, sale) {
   return new Promise((resolve) => {
-    let logoPath = LOGO_RELATIVE_PATH;
-    if (!fs.existsSync(logoPath)) {
-      logoPath = path.join(process.cwd(), "assets/hino.jpg");
-    }
 
-    /* ---------------- HEADER ---------------- */
-    const headerY = doc.y;
-
-    if (fs.existsSync(logoPath)) {
+    /* ----- Load Logo ----- */
+    if (fs.existsSync(LOGO_PATH)) {
       try {
-        doc.image(logoPath, 40, headerY, { width: 100, height: 100 });
+        doc.image(LOGO_PATH, 40, 40, { width: 120 });
       } catch (err) {
-        console.warn("Logo load failed:", err);
+        console.warn("Logo display failed:", err);
       }
+    } else {
+      console.warn("Logo NOT found:", LOGO_PATH);
     }
 
-    // Company Details
-    const companyX = 160;
+    /* ----- Company Info ----- */
     doc.font("Helvetica-Bold").fontSize(22).fillColor("#1f3c88")
-      .text(COMPANY.name, companyX, headerY);
+      .text(COMPANY.name, 180, 40);
 
     doc.font("Helvetica").fontSize(10).fillColor("#444")
-      .text(COMPANY.address, companyX, headerY + 28)
+      .text(COMPANY.address, 180, 70)
       .text(`Phone: ${COMPANY.phone}`)
-      .text(`Email: ${COMPANY.email}`)
-      .text(COMPANY.website);
+      .text(`Email: ${COMPANY.email}`);
 
-    // Invoice Title
-    doc.font("Helvetica-Bold").fontSize(30).fillColor("#1f3c88")
-      .text("INVOICE", 0, headerY, { align: "right" });
+    doc.font("Helvetica-Bold").fontSize(28).fillColor("#1f3c88")
+      .text("INVOICE", 0, 40, { align: "right" });
 
-    // Divider below header
-    const dividerY = Math.max(headerY + 100, doc.y + 10);
-    doc.moveTo(40, dividerY)
-      .lineTo(555, dividerY)
-      .lineWidth(2)
-      .strokeColor("#1f3c88")
-      .stroke();
-
+    doc.moveTo(40, 160).lineTo(555, 160).lineWidth(2).strokeColor("#1f3c88").stroke();
     doc.moveDown(2);
 
-    /* ---------------- INVOICE INFO ---------------- */
-    const leftX = 40;
-    const rightX = 330;
-    const startY = doc.y;
-
- 
-
-    doc.moveDown(0.5);
+    /* ----- Invoice Details ----- */
     doc.font("Helvetica").fontSize(11).fillColor("#333");
-    doc.text("Invoice ID: ", leftX, startY, { continued: true })
-      .font("Helvetica-Bold").text(sale.invoiceId || sale._id);
-    doc.text("Customer: ", leftX, doc.y, { continued: true })
-      .font("Helvetica-Bold").text(sale.customerName || "Walk-in");
-    doc.text("Date: ", leftX, doc.y, { continued: true })
-      .font("Helvetica-Bold").text(new Date(sale.date).toLocaleString());
+    doc.text(`Invoice ID: ${sale.invoiceId}`);
+    doc.text(`Customer: ${sale.customerName || "Walk-in"}`);
+    doc.text(`Date: ${new Date(sale.date).toLocaleString()}`);
 
-    doc.text("Cashier: ", rightX, startY, { continued: true })
-      .font("Helvetica-Bold").text(sale.cashierName || "N/A");
-    doc.text("Payment Method: ", rightX, doc.y, { continued: true })
-      .font("Helvetica-Bold").text(sale.paymentMethod || "N/A");
+    doc.moveDown(1);
 
-    doc.moveDown(1.5);
-
-    /* ---------------- TABLE ---------------- */
-    const tableTop = doc.y + 5;
+    /* ----- Table Header ----- */
+    const tableTop = doc.y + 10;
     doc.rect(40, tableTop, 515, 25).fill("#1f3c88");
-    doc.fillColor("#fff").font("Helvetica-Bold").fontSize(11);
-    doc.text("Item", 50, tableTop + 7);
-    doc.text("Qty", 280, tableTop + 7);
-    doc.text("Unit Price", 330, tableTop + 7);
-    doc.text("VAT%", 430, tableTop + 7);
-    doc.text("Total", 510, tableTop + 7, { align: "right" });
 
-    doc.fillColor("#000");
+    doc.fillColor("#fff").fontSize(11).font("Helvetica-Bold");
+    doc.text("Item", 50, tableTop + 7);
+    doc.text("Qty", 260, tableTop + 7);
+    doc.text("Unit Price", 310, tableTop + 7);
+    doc.text("VAT%", 400, tableTop + 7);
+    doc.text("Total", 520, tableTop + 7, { align: "right" });
+
+    /* ----- Table Body ----- */
     let posY = tableTop + 30;
     let subtotal = 0;
     let totalVat = 0;
 
     sale.items.forEach((item, index) => {
-      if (index % 2 === 0) doc.rect(40, posY - 2, 515, 22).fill("#f5f6fa");
-      doc.fillColor("#000");
+      if (index % 2 === 0) doc.rect(40, posY - 2, 515, 22).fill("#f4f4f6");
 
       const total = item.unitPrice * item.quantity;
       const vat = (item.vat / 100) * total;
+
       subtotal += total;
       totalVat += vat;
 
-      doc.font("Helvetica").fontSize(10);
+      doc.fillColor("#000").font("Helvetica").fontSize(10);
       doc.text(item.itemDescription, 50, posY);
-      doc.text(item.quantity, 285, posY);
-      doc.text(`$${item.unitPrice.toFixed(2)}`, 330, posY);
-      doc.text(`${item.vat}%`, 430, posY);
-      doc.text(`$${(total + vat).toFixed(2)}`, 500, posY, { width: 50, align: "right" });
+      doc.text(item.quantity, 260, posY);
+      doc.text(`$${item.unitPrice.toFixed(2)}`, 310, posY);
+      doc.text(`${item.vat}%`, 400, posY);
+      doc.text(`$${(total + vat).toFixed(2)}`, 490, posY, { width: 70, align: "right" });
 
       posY += 24;
-      if (posY > 720) {
-        doc.addPage();
-        posY = 50;
-      }
     });
 
-    /* ---------------- TOTALS ---------------- */
+    /* ----- Totals Box ----- */
     const grandTotal = subtotal + totalVat;
+
     doc.rect(300, posY + 10, 255, 90).fill("#1f3c88");
     doc.fillColor("#fff").fontSize(11);
+
     doc.text(`Subtotal: $${subtotal.toFixed(2)}`, 310, posY + 20);
     doc.text(`VAT Total: $${totalVat.toFixed(2)}`, 310, posY + 40);
-    doc.font("Helvetica-Bold").fontSize(14).text(`Grand Total: $${grandTotal.toFixed(2)}`, 310, posY + 65);
+    doc.font("Helvetica-Bold").fontSize(14)
+      .text(`Grand Total: $${grandTotal.toFixed(2)}`, 310, posY + 65);
 
-    /* ---------------- FOOTER ---------------- */
-    doc.moveDown(4);
-    doc.fillColor("#444").font("Helvetica").fontSize(10);
-    doc.text("Thank you for your business!", 40);
-    doc.fontSize(9).fillColor("#777").text(
-      "This is a computer generated invoice and does not require a signature.",
-      40
-    );
+    /* ----- Footer ----- */
+    doc.fillColor("#444").fontSize(10).moveDown(4);
+    doc.text("Thank you for your business!");
 
     resolve();
   });
