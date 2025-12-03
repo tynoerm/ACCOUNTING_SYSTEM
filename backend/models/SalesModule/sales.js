@@ -8,25 +8,28 @@ const itemSchema = new mongoose.Schema({
   totalPrice: { type: Number, required: true },
 });
 
-const salesSchema = new mongoose.Schema({
-  date: { type: Date, required: true },
-  cashierName: { type: String, required: true },
+const salesSchema = new mongoose.Schema(
+  {
+    /* 🔥 ADD THIS FIELD */
+    invoiceId: { type: String, required: true, unique: true },
 
-  // NOW OPTIONAL
-  customerName: { type: String, default: null },
+    date: { type: Date, required: true },
+    cashierName: { type: String, required: true },
 
-  paymentMethod: { type: String, required: true },
+    customerName: { type: String, default: null },
+    paymentMethod: { type: String, required: true },
 
-  // NOW OPTIONAL
-  currency: { type: String, default: null },
+    currency: { type: String, default: null },
+    balance: { type: Number, default: 0 },
 
-  balance: { type: Number, default: 0 },
-  items: [itemSchema],
-  subtotal: { type: Number, required: true },
-  vatAmount: { type: Number, required: true },
-  grandTotal: { type: Number, required: true },
-}, { timestamps: true });
+    items: [itemSchema],
+
+    subtotal: { type: Number, required: true },
+    vatAmount: { type: Number, required: true },
+    grandTotal: { type: Number, required: true },
+  },
+  { timestamps: true }
+);
 
 const salesModel = mongoose.model("Sale", salesSchema);
-
 export default salesModel;
